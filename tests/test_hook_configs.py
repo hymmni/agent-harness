@@ -18,7 +18,7 @@ def load(rel):
 ])
 def test_hook_runs_shared_guard(entry, matcher):
     assert entry["matcher"] == matcher
-    assert "scripts/block_dangerous.py" in entry["hooks"][0]["command"]
+    assert ".harness/block_dangerous.py" in entry["hooks"][0]["command"]
 
 
 def test_references_are_write_protected():

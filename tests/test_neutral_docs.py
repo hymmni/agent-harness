@@ -31,7 +31,7 @@ def test_shared_file_names_no_agent(rel):
 @pytest.mark.parametrize("text", [
     "feat|fix|hotfix|refactor|docs|chore", "scratch/", "experiments/<",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
-    "pyproject.toml", "scripts/setup.py", "git revert",
+    "pyproject.toml", ".harness/setup.py", "git revert",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")

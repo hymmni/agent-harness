@@ -16,7 +16,7 @@ IGNORED = [
 ]
 TRACKED = [
     "experiments/feat-x/log.md", ".claude/settings.json", ".claude/skills/harness/SKILL.md",
-    ".agents/hooks.json", ".codex/hooks.json",
+    ".agents/hooks.json", ".codex/hooks.json", ".harness/setup.py", ".harness/block_dangerous.py",
 ]
 
 
@@ -55,9 +55,10 @@ def project(tmp_path):
 def test_installs_into_empty_repo(project):
     result = install(project)
     assert result.returncode == 0
-    for rel in ("AGENTS.md", "CLAUDE.md", ".githooks/pre-commit", "scratch", "scripts/setup.py"):
+    for rel in ("AGENTS.md", "CLAUDE.md", ".githooks/pre-commit", "scratch",
+                ".harness/setup.py", ".harness/block_dangerous.py"):
         assert (project / rel).exists(), rel
-    for rel in ("harness", "tests", "README.md", "docs/superpowers"):
+    for rel in ("harness", "tests", "scripts", "README.md", "docs/superpowers"):
         assert not (project / rel).exists(), rel
     assert os.access(project / ".githooks/pre-commit", os.X_OK)
 
@@ -65,7 +66,7 @@ def test_installs_into_empty_repo(project):
 def test_leaves_git_hooks_to_setup(project):
     result = install(project)
     assert git(project, "config", "core.hooksPath").stdout == ""
-    assert "python3 scripts/setup.py" in result.stdout
+    assert "python3 .harness/setup.py" in result.stdout
 
 
 @pytest.mark.parametrize("rel", IGNORED)

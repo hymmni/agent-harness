@@ -15,7 +15,7 @@ Harness 부트스트랩 설치기 — 작업 레포 안에 클론한 템플릿�
     4. 클론 디렉토리(harness/)를 통째로 삭제해 스스로 정리
 
 빈 프로젝트는 `git init` 후 같은 방법으로 적용한다. git hook 연결과 플러그인 설치는
-clone마다 필요하므로 설치 후 `python3 scripts/setup.py`로 한다.
+clone마다 필요하므로 설치 후 `python3 .harness/setup.py`로 한다.
 
 기존 파일을 절대 덮어쓰지 않는다(비파괴). 기존 AGENTS.md 나 CLAUDE.md 가 있으면 harness
 버전을 *.harness.md 로 남겨 수동 병합하게 한다.
@@ -47,7 +47,7 @@ DOCKER_TEMPLATED_FILES = {"docker-compose.yml", ".devcontainer/devcontainer.json
 # --- .gitignore 블록 (대상 프로젝트 전용). 설치 시 대상의 .gitignore 에 append 되어
 #     harness 도구가 그 프로젝트 이력을 오염시키지 않게 한다.
 #     주의: 이 블록은 '대상 프로젝트용'이다. 이 템플릿 레포 자신의 .gitignore 와는 별개이며
-#     (템플릿 레포는 scripts/ docs/ 등 harness 소스를 추적해야 하므로), 둘을 동일시하지 마라. ---
+#     (템플릿 레포는 .harness/ docs/ 등 harness 소스를 추적해야 하므로), 둘을 동일시하지 마라. ---
 GITIGNORE_BEGIN = "# >>> harness gitignore (managed) >>>"
 GITIGNORE_END = "# <<< harness gitignore (managed) <<<"
 GITIGNORE_BLOCK = """\
@@ -232,11 +232,11 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
     others = [path for path in skipped if path not in CONFLICT_FILES]
     if others:
         print(f"  ⚠ 기존 파일이 있어 복사하지 않았습니다: {', '.join(others)}")
-        print("    hook 설정이나 scripts/setup.py가 있으면 하네스 내용을 직접 병합하세요.")
+        print("    hook 설정이 있으면 하네스 내용을 직접 병합하세요.")
     warning = warn_ignored_experiments(TARGET_ROOT)
     if warning:
         print(warning)
-    print("  ✓ 완료. 이제 프로젝트 루트에서 `python3 scripts/setup.py`를 실행하세요.\n")
+    print("  ✓ 완료. 이제 프로젝트 루트에서 `python3 .harness/setup.py`를 실행하세요.\n")
     return 0
 
 

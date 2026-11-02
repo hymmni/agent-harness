@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-HOOK = Path(__file__).with_name("block_dangerous.py")
+HOOK = Path(__file__).resolve().parent.parent / ".harness/block_dangerous.py"
 
 
 def run_hook(stdin: str) -> subprocess.CompletedProcess:
@@ -57,7 +57,7 @@ def test_blocks_dangerous_command(command):
     "git push origin feat/fix-force",
     "git push origin main && ls -f",
     "git reset --soft HEAD~1",
-    "python3 scripts/setup.py",
+    "python3 .harness/setup.py",
     "git config core.hooksPath",
     "git config core.hooksPath .githooks",
     "grep -n core.hooksPath AGENTS.md",

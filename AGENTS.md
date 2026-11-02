@@ -6,7 +6,7 @@
 2. 가상환경이 있는지 확인한다(`venv/`, `.venv/`, `conda` 환경 등). 있으면 해당 환경에서 작업한다.
    - conda: `conda activate <env>` / venv: `source venv/bin/activate`
 3. `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/private/ENVIRONMENT.md`를 읽고 현재 구조·결정 이력·하드웨어 구성을 파악한다.
-4. `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 scripts/setup.py`를 실행한다.
+4. `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 .harness/setup.py`를 실행한다.
 5. 현재 브랜치의 플랜(`docs/superpowers/plans/`)이 있으면 체크되지 않은 task부터 이어 간다.
 6. `continuation_plan.md`가 있으면 읽고 이전 세션의 중단 지점부터 이어서 시작한다.
 
@@ -63,4 +63,4 @@
 | **단순 작업** | 단순 수정, 문서 작성, 빠른 조회성 작업 |
 
 ## 🛠️ 유틸리티 명령어
-- `python3 scripts/setup.py` # clone마다 한 번 실행: git hook 연결, 설치된 에이전트에 `superpowers` 설치
+- `python3 .harness/setup.py` # clone마다 한 번 실행: git hook 연결, 설치된 에이전트에 `superpowers` 설치

@@ -13,7 +13,7 @@
 
 ```bash
 git clone https://github.com/hymmni/claude-harness-framework.git harness && python3 harness/install.py
-python3 scripts/setup.py
+python3 .harness/setup.py
 ```
 
 `install.py`는 파일 복사(비파괴) → `.gitignore` 병합 → 디렉토리 생성 → 클론 자가삭제까지 처리합니다. 기존 파일은 덮어쓰지 않으며, 기존 `AGENTS.md`나 `CLAUDE.md`가 있으면 harness 버전을 `*.harness.md`로 남겨 수동 병합하게 합니다. (대상 경로 확인을 건너뛰려면 끝에 ` --yes`)
@@ -23,7 +23,7 @@ python3 scripts/setup.py
 clone마다 한 번 실행합니다. 여러 번 실행해도 결과가 같습니다.
 
 ```bash
-python3 scripts/setup.py
+python3 .harness/setup.py
 ```
 
 - git hook을 `.githooks/`에 연결합니다. 다른 hook이 이미 있으면 바꾸지 않고 알려 줍니다.
@@ -51,7 +51,7 @@ CLAUDE.md        # AGENTS.md를 불러오는 한 줄 — git 추적
 .githooks/       # 브랜치·커밋 규칙 — git 추적
 docs/            # 아키텍처 가이드 (ARCHITECTURE, ADR, ROBOT_GUIDE) — git 추적
   private/       #   PC/GPU 등 로컬 인프라 정보 (ENVIRONMENT.md) — git 미추적
-scripts/         # 설정과 안전장치 스크립트 — git 추적
+.harness/        # 설정과 안전장치 스크립트 — git 추적
 experiments/     # 브랜치별 실험 기록 (LOG_TEMPLATE 활용) — git 추적
 references/      # 외부 오픈소스를 분석용으로 Clone (Read-only) — git 미추적
 scratch/         # 일회용 스크립트 — git 미추적
@@ -75,5 +75,5 @@ scratch/         # 일회용 스크립트 — git 미추적
 이 템플릿 자체의 테스트는 다음 명령으로 실행합니다. `tests/`는 대상 프로젝트에 복사되지 않습니다.
 
 ```bash
-python3 -m pytest -q scripts tests
+python3 -m pytest -q tests
 ```

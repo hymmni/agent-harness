@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-SETUP = Path(__file__).resolve().parent.parent / "scripts/setup.py"
+SETUP = Path(__file__).resolve().parent.parent / ".harness/setup.py"
 GIT_DIR = str(Path(shutil.which("git")).parent)
 ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
 
@@ -39,8 +39,8 @@ def bin_dir(tmp_path):
 @pytest.fixture
 def repo(tmp_path):
     path = tmp_path / "repo"
-    (path / "scripts").mkdir(parents=True)
-    shutil.copy2(SETUP, path / "scripts/setup.py")
+    (path / ".harness").mkdir(parents=True)
+    shutil.copy2(SETUP, path / ".harness/setup.py")
     git(path, "init", "-q", "-b", "main")
     return path
 
@@ -64,7 +64,7 @@ def calls(bin_dir, name):
 
 def run_setup(repo, bin_dir):
     env = {**ENV, "PATH": f"{bin_dir}{os.pathsep}{GIT_DIR}"}
-    return subprocess.run([sys.executable, "scripts/setup.py"], cwd=repo,
+    return subprocess.run([sys.executable, ".harness/setup.py"], cwd=repo,
                           capture_output=True, text=True, env=env)
 
 
@@ -95,8 +95,8 @@ def test_sample_hooks_do_not_count(repo, bin_dir):
 
 def test_outside_git_repo_explains_git_init(tmp_path, bin_dir):
     path = tmp_path / "plain"
-    (path / "scripts").mkdir(parents=True)
-    shutil.copy2(SETUP, path / "scripts/setup.py")
+    (path / ".harness").mkdir(parents=True)
+    shutil.copy2(SETUP, path / ".harness/setup.py")
     result = run_setup(path, bin_dir)
     assert "git init" in result.stdout and result.returncode == 1
 
