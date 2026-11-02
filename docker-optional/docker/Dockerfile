@@ -1,5 +1,5 @@
 # 단일 venv 기본 이미지. 여러 stack(예: jax + torch)이 필요하면 venv를 추가하고
-# requirements 파일을 나눠서 COPY+RUN 레이어를 늘리세요 (self-improving-gym/docker/Dockerfile 참고).
+# requirements 파일을 나눠서 COPY+RUN 레이어를 늘리세요.
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \

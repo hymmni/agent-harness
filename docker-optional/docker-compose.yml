@@ -8,12 +8,7 @@ services:
     volumes:
       - .:/workspace
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      # 호스트의 Claude Code 로그인/설정을 그대로 재사용. 컨테이너 경로가 호스트 경로와
-      # 완전히 같아야 함(DOCKER.md 참고) — plugin/marketplace 설정이 절대경로를 저장하기 때문.
-      - ${HOME}/.claude:${HOME}/.claude
-      - ${HOME}/.claude.json:${HOME}/.claude.json
     environment:
       - DISPLAY=${DISPLAY}
-      - HOME=${HOME}
     stdin_open: true
     tty: true
