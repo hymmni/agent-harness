@@ -152,8 +152,8 @@ def install_gitignore(target: Path) -> str:
     return ".gitignore: harness 블록 추가" if existing else ".gitignore: 생성 + harness 블록 추가"
 
 
-def copy_tree(src: Path, dst: Path, top: bool = True) -> int:
-    """src 내용을 dst로 복사. 기존 파일은 건너뛴다(비파괴). 복사한 파일 수를 반환."""
+def copy_tree(src: Path, dst: Path, skipped: list, top: bool = True) -> int:
+    """src 내용을 dst로 복사. 기존 파일은 건너뛰고(비파괴) skipped에 기록한다. 복사한 파일 수를 반환."""
     count = 0
     for item in src.iterdir():
         if item.name in ALWAYS_SKIP or (top and item.name in TOP_EXCLUDE):
@@ -161,8 +161,10 @@ def copy_tree(src: Path, dst: Path, top: bool = True) -> int:
         target = dst / item.name
         if item.is_dir():
             target.mkdir(exist_ok=True)
-            count += copy_tree(item, target, top=False)
-        elif not target.exists():
+            count += copy_tree(item, target, skipped, top=False)
+        elif target.exists():
+            skipped.append(target.relative_to(TARGET_ROOT).as_posix())
+        else:
             shutil.copy2(item, target)
             count += 1
     return count
@@ -204,7 +206,8 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
     for name in conflicts:
         shutil.copy2(CLONE_ROOT / name, TARGET_ROOT / f"{Path(name).stem}.harness.md")
 
-    n = copy_tree(CLONE_ROOT, TARGET_ROOT)
+    skipped = []
+    n = copy_tree(CLONE_ROOT, TARGET_ROOT, skipped)
     print(f"  복사: {n}개 파일 (기존 파일은 보존)")
     print(f"  {install_gitignore(TARGET_ROOT / '.gitignore')}")
 
@@ -226,6 +229,10 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
     if "CLAUDE.md" in conflicts:
         print("  ⚠ 기존 CLAUDE.md 발견 — harness 버전을 CLAUDE.harness.md 로 저장했습니다.")
         print("    기존 CLAUDE.md에 `@AGENTS.md` 줄을 추가한 뒤 CLAUDE.harness.md 를 삭제하세요.")
+    others = [path for path in skipped if path not in CONFLICT_FILES]
+    if others:
+        print(f"  ⚠ 기존 파일이 있어 복사하지 않았습니다: {', '.join(others)}")
+        print("    hook 설정이나 scripts/setup.py가 있으면 하네스 내용을 직접 병합하세요.")
     warning = warn_ignored_experiments(TARGET_ROOT)
     if warning:
         print(warning)

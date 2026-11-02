@@ -95,6 +95,14 @@ def test_keeps_existing_agents_md(project):
     assert (project / "AGENTS.harness.md").exists()
 
 
+def test_reports_skipped_existing_files(project):
+    (project / ".claude").mkdir()
+    (project / ".claude/settings.json").write_text("{}\n")
+    result = install(project)
+    assert (project / ".claude/settings.json").read_text() == "{}\n"
+    assert ".claude/settings.json" in result.stdout
+
+
 def test_warns_when_experiments_are_ignored(project):
     (project / ".gitignore").write_text("experiments/\n")
     assert "experiments/" in install(project).stdout

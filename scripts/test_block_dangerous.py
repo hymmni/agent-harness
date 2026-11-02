@@ -58,6 +58,7 @@ def test_blocks_dangerous_command(command):
     "python3 scripts/setup.py",
     "git config core.hooksPath",
     "git config core.hooksPath .githooks",
+    "grep -n core.hooksPath AGENTS.md",
     'git commit -am "update"',
 ])
 def test_allows_ordinary_command(command):
