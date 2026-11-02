@@ -8,7 +8,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 SHARED_FILES = [
-    "AGENTS.md", ".agents/skills/harness/SKILL.md",
+    "AGENTS.md", ".agents/skills/harness/SKILL.md", "docs/ROBOT_GUIDE.md",
     "docker-optional/DOCKER.md", "docker-optional/docker-compose.yml",
     "docker-optional/.devcontainer/devcontainer.json", "docker-optional/docker/Dockerfile",
 ]
