@@ -25,7 +25,7 @@ SUPERPOWERS = {
 }
 MANUAL_STEPS = {
     "claude": "Claude Code: 첫 실행 때 이 폴더 신뢰를 승인하세요.",
-    "codex": "Codex: /hooks에서 이 레포의 hook을 승인하세요.",
+    "codex": "Codex: /hooks에서 이 레포의 hook을 승인하세요. 승인 전에는 위험 명령이 차단되지 않습니다.",
 }
 
 

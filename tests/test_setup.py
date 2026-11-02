@@ -142,3 +142,4 @@ def test_prints_manual_trust_steps(repo, bin_dir):
     fake_agent(bin_dir, "codex", listed=INSTALLED)
     out = run_setup(repo, bin_dir).stdout
     assert "폴더 신뢰" in out and "/hooks" in out
+    assert "승인 전에는" in out
