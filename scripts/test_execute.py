@@ -109,13 +109,17 @@ class TestJsonHelpers:
 # ---------------------------------------------------------------------------
 
 class TestLoadGuardrails:
-    def test_loads_claude_md_and_allowlisted_docs(self, executor, tmp_project):
+    def test_loads_allowlisted_docs(self, executor, tmp_project):
         with patch.object(ex, "ROOT", tmp_project):
             result = executor._load_guardrails()
-        assert "# Rules" in result
-        assert "rule one" in result
         assert "# Architecture" in result
         assert "# ADR" in result
+
+    def test_claude_md_is_not_injected(self, executor, tmp_project):
+        # `claude -p`가 cwd의 CLAUDE.md를 자동 로드하므로, 넣으면 task마다 두 번 들어간다.
+        with patch.object(ex, "ROOT", tmp_project):
+            result = executor._load_guardrails()
+        assert "rule one" not in result
 
     def test_unlisted_doc_is_not_injected(self, executor, tmp_project):
         # 기존 repo의 무관한 docs/*.md 가 가드레일에 섞이지 않아야 한다 (footgun 방지).
@@ -135,20 +139,12 @@ class TestLoadGuardrails:
             result = executor._load_guardrails()
         assert result.index("Architecture") < result.index("ADR")
 
-    def test_no_claude_md(self, executor, tmp_project):
-        (tmp_project / "CLAUDE.md").unlink()
-        with patch.object(ex, "ROOT", tmp_project):
-            result = executor._load_guardrails()
-        assert "CLAUDE.md" not in result
-        assert "Architecture" in result
-
     def test_no_docs_dir(self, executor, tmp_project):
         import shutil
         shutil.rmtree(tmp_project / "docs")
         with patch.object(ex, "ROOT", tmp_project):
             result = executor._load_guardrails()
-        assert "Rules" in result
-        assert "Architecture" not in result
+        assert result == ""
 
     def test_empty_project(self, tmp_path):
         with patch.object(ex, "ROOT", tmp_path):

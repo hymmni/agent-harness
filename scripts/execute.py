@@ -141,7 +141,7 @@ class PlanExecutor:
     FAIL_MSG = "wip({feature}): task {num} — {name} (FAILED)"
     # 매 task 프롬프트에 주입할 가드레일 문서 (docs/ 하위). glob이 아닌 명시 목록이다.
     # 코드 구현에 직접 필요한 기술 가드레일만 둔다. ROBOT_GUIDE.md(사람용 워크플로우 안내)는
-    # 제외 — 3-PC/CPU-fallback 등 task에 필요한 규칙은 이미 CLAUDE.md로 주입된다.
+    # 제외 — 3-PC/CPU-fallback 등 task에 필요한 규칙은 자동 로드되는 CLAUDE.md에 이미 있다.
     # 새 가드레일 문서를 추가하려면 여기에 파일명을 등록하라.
     GUARDRAIL_DOCS = ("ARCHITECTURE.md", "ADR.md")
     TZ = timezone(timedelta(hours=9))
@@ -205,10 +205,8 @@ class PlanExecutor:
         # docs/*.md 전체를 glob하지 않고 GUARDRAIL_DOCS 명시 목록만 주입한다.
         # 이유: 기존 코드가 있는 repo에 harness를 덧붙일 때, 그 repo의 무관한 docs/*.md가
         # 매 task 프롬프트에 섞여 노이즈/토큰 낭비가 되는 것을 방지한다(silent footgun).
+        # CLAUDE.md는 `claude -p`가 cwd에서 자동 로드하므로 여기서 다시 넣지 않는다.
         sections = []
-        claude_md = ROOT / "CLAUDE.md"
-        if claude_md.exists():
-            sections.append(f"## 프로젝트 규칙 (CLAUDE.md)\n\n{claude_md.read_text()}")
         docs_dir = ROOT / "docs"
         for name in self.GUARDRAIL_DOCS:
             doc = docs_dir / name

@@ -2,7 +2,7 @@
 """
 Merge a feature branch into main — opt-in 헬퍼.
 
-이 스크립트는 **명시적으로 직접 실행할 때만** 동작한다. execute.py(step 실행기)는
+이 스크립트는 **명시적으로 직접 실행할 때만** 동작한다. execute.py(플랜 실행기)는
 main을 절대 건드리지 않으며, main 병합은 사용자가 이 헬퍼로 수행하거나 수동으로 한다.
 
 수행 시퀀스 (사용자 지정):

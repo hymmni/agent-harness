@@ -58,7 +58,7 @@ execute.py가 자동으로 처리하는 것:
 
 - `feat/{feature-name}` 브랜치 생성/checkout (feature-name = 플랜 파일명에서 날짜
   접두어를 뺀 것)
-- 가드레일 주입 — CLAUDE.md + docs/*.md 내용을 매 task 프롬프트에 포함
+- 가드레일 주입 — `docs/ARCHITECTURE.md`·`docs/ADR.md`를 매 task 프롬프트에 포함 (CLAUDE.md는 `claude -p`가 자동 로드)
 - 컨텍스트 누적 — 완료된 task의 summary를 다음 task 프롬프트에 전달
 - 자가 교정 — AC 실패 시 최대 3회 재시도. **매 시도 결과가 `<plan>.state.json`의
   `attempts` 배열에 기록되고**, 최종 성공해도 재시도가 있었다면 squash 커밋 본문에

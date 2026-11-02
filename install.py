@@ -22,8 +22,8 @@ Docker/devcontainer 개발 환경(docker-optional/)은 기본적으로 설치하
 아무 지정 안 함)로 건너뛸 수 있다. 설치되는 파일의 `docker-compose.yml` image 이름, devcontainer
 이름은 대상 디렉터리 이름으로 자동 치환된다. 왜 이런 구조인지는 설치된 DOCKER.md 참고.
 
-from scratch로 시작하는 경우엔 이 스크립트가 필요 없다 — 템플릿을 프로젝트로 직접 클론한 뒤
-`rm install.py` 로 지우면 된다.
+from scratch로 시작하는 경우엔 설치가 필요 없다 — 템플릿을 프로젝트로 직접 클론한 뒤
+`python3 install.py --print-gitignore >> .gitignore && rm install.py` 로 규칙만 추가하고 지운다.
 """
 
 import argparse
@@ -211,7 +211,7 @@ def main() -> int:
     ap.add_argument("--without-docker", action="store_true",
                     help="Docker 스캐폴드 설치 안 함 (프롬프트 생략)")
     ap.add_argument("--print-gitignore", action="store_true",
-                    help=".gitignore 블록만 출력하고 종료 (템플릿 유지보수용)")
+                    help=".gitignore 블록만 출력하고 종료 (from scratch 시작용)")
     args = ap.parse_args()
 
     if args.with_docker and args.without_docker:
