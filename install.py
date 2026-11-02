@@ -11,11 +11,14 @@ Harness 부트스트랩 설치기 — 작업 레포 안에 클론한 템플릿�
 이 스크립트가 하는 일:
     1. 클론(harness/)의 harness 파일을 프로젝트 루트로 복사 (없는 파일만, 기존 파일·.git 보존)
     2. 기존 .gitignore 에 harness 규칙을 멱등하게 추가
-    3. harness 디렉토리(experiments/ references/) 생성
+    3. harness 디렉토리(experiments/ references/ scratch/) 생성
     4. 클론 디렉토리(harness/)를 통째로 삭제해 스스로 정리
 
-기존 파일을 절대 덮어쓰지 않는다(비파괴). 기존 CLAUDE.md 가 있으면 harness 버전을
-CLAUDE.harness.md 로 남겨 수동 병합하게 한다.
+빈 프로젝트는 `git init` 후 같은 방법으로 적용한다. git hook 연결과 플러그인 설치는
+clone마다 필요하므로 설치 후 `python3 scripts/setup.py`로 한다.
+
+기존 파일을 절대 덮어쓰지 않는다(비파괴). 기존 AGENTS.md 나 CLAUDE.md 가 있으면 harness
+버전을 *.harness.md 로 남겨 수동 병합하게 한다.
 
 Docker/devcontainer 개발 환경(docker-optional/)은 기본적으로 설치하지 않는다 — 대화형
 실행 시 물어보고, `--with-docker`로 강제 설치하거나 `--without-docker`(또는 `--yes`만 주고
@@ -26,8 +29,10 @@ Docker/devcontainer 개발 환경(docker-optional/)은 기본적으로 설치하
 import argparse
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 CLONE_ROOT = Path(__file__).resolve().parent   # 클론된 템플릿 루트 (= harness/)
 TARGET_ROOT = CLONE_ROOT.parent                # 적용 대상 프로젝트 루트
@@ -47,20 +52,33 @@ GITIGNORE_BEGIN = "# >>> harness gitignore (managed) >>>"
 GITIGNORE_END = "# <<< harness gitignore (managed) <<<"
 GITIGNORE_BLOCK = """\
 /CLAUDE.harness.md
+/AGENTS.harness.md
 /.claude/*
 !/.claude/skills/
+!/.claude/settings.json
 /docs/private/
-/experiments/
 /references/
+/scratch/
 /continuation_plan.md
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.zarr/
+*.hdf5
+*.h5
+wandb/
+outputs/
 """
 
-# 어느 깊이에서든 복사하지 않을 잡파일 (git 메타, 캐시 등)
-ALWAYS_SKIP = {".git", "__pycache__", ".pytest_cache", ".DS_Store"}
-# 클론 최상위에서만 제외할 항목 (설치 도구 자체 + README, .gitignore는 append로 처리,
-# docker-optional/은 옵션이라 install_docker()가 별도로 처리)
-TOP_EXCLUDE = {"install.py", "README.md", ".gitignore", DOCKER_SRC_DIRNAME}
-HARNESS_DIRS = ("experiments", "references")
+# 어느 깊이에서든 복사하지 않을 항목 (git 메타, 캐시, 이 템플릿 자체의 설계 문서)
+ALWAYS_SKIP = {".git", "__pycache__", ".pytest_cache", ".DS_Store", "superpowers"}
+# 클론 최상위에서만 제외할 항목 (설치 도구 자체 + 템플릿 전용 테스트 + README, .gitignore는
+# append로 처리, docker-optional/은 옵션이라 install_docker()가 별도로 처리)
+TOP_EXCLUDE = {"install.py", "README.md", ".gitignore", "tests", DOCKER_SRC_DIRNAME}
+HARNESS_DIRS = ("experiments", "references", "scratch")
+# 대상에 이미 있으면 덮어쓰지 않고 *.harness.md 로 남기는 규칙 파일
+CONFLICT_FILES = ("AGENTS.md", "CLAUDE.md")
 
 
 def slugify_project_name(name: str) -> str:
@@ -150,6 +168,15 @@ def copy_tree(src: Path, dst: Path, top: bool = True) -> int:
     return count
 
 
+def warn_ignored_experiments(target: Path) -> Optional[str]:
+    """experiments/ 가 추적되어야 하는데 대상의 기존 규칙이 제외하고 있으면 경고문을 반환."""
+    ignored = subprocess.run(["git", "-C", str(target), "check-ignore", "-q", "experiments/feat-x/log.md"],
+                             capture_output=True)
+    if ignored.returncode == 0:
+        return "  ⚠ 기존 .gitignore가 experiments/를 제외합니다. 실험 기록을 공유하려면 그 규칙을 지우세요."
+    return None
+
+
 def confirm(prompt: str, assume_yes: bool) -> bool:
     if assume_yes:
         return True
@@ -160,7 +187,7 @@ def confirm(prompt: str, assume_yes: bool) -> bool:
 
 
 def run_install(assume_yes: bool, want_docker=None) -> int:
-    if not (CLONE_ROOT / "CLAUDE.md").exists():
+    if not (CLONE_ROOT / "AGENTS.md").exists():
         print("  ERROR: 이 스크립트는 git clone한 harness 템플릿 안에서 실행해야 합니다.")
         print("         cd <your-project> && git clone <url> harness && python3 harness/install.py")
         return 1
@@ -172,10 +199,10 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
         print("  중단됨.")
         return 1
 
-    # 기존 CLAUDE.md 충돌 시 harness 버전을 보존 (clone 삭제 후에도 병합 가능하도록)
-    claude_conflict = (TARGET_ROOT / "CLAUDE.md").exists()
-    if claude_conflict:
-        shutil.copy2(CLONE_ROOT / "CLAUDE.md", TARGET_ROOT / "CLAUDE.harness.md")
+    # 규칙 파일 충돌 시 harness 버전을 보존 (clone 삭제 후에도 병합 가능하도록)
+    conflicts = [name for name in CONFLICT_FILES if (TARGET_ROOT / name).exists()]
+    for name in conflicts:
+        shutil.copy2(CLONE_ROOT / name, TARGET_ROOT / f"{Path(name).stem}.harness.md")
 
     n = copy_tree(CLONE_ROOT, TARGET_ROOT)
     print(f"  복사: {n}개 파일 (기존 파일은 보존)")
@@ -193,10 +220,16 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
     shutil.rmtree(CLONE_ROOT)
     print(f"  clone 삭제: {CLONE_ROOT.name}/")
 
-    if claude_conflict:
+    if "AGENTS.md" in conflicts:
+        print("  ⚠ 기존 AGENTS.md 발견 — harness 버전을 AGENTS.harness.md 로 저장했습니다.")
+        print("    두 파일을 수동 병합한 뒤 AGENTS.harness.md 를 삭제하세요.")
+    if "CLAUDE.md" in conflicts:
         print("  ⚠ 기존 CLAUDE.md 발견 — harness 버전을 CLAUDE.harness.md 로 저장했습니다.")
-        print("    두 파일을 수동 병합한 뒤 CLAUDE.harness.md 를 삭제하세요.")
-    print("  ✓ 완료. 이제 /harness 로 플랜 작성을 시작하세요.\n")
+        print("    기존 CLAUDE.md에 `@AGENTS.md` 줄을 추가한 뒤 CLAUDE.harness.md 를 삭제하세요.")
+    warning = warn_ignored_experiments(TARGET_ROOT)
+    if warning:
+        print(warning)
+    print("  ✓ 완료. 이제 프로젝트 루트에서 `python3 scripts/setup.py`를 실행하세요.\n")
     return 0
 
 
