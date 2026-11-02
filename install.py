@@ -21,9 +21,6 @@ Docker/devcontainer 개발 환경(docker-optional/)은 기본적으로 설치하
 실행 시 물어보고, `--with-docker`로 강제 설치하거나 `--without-docker`(또는 `--yes`만 주고
 아무 지정 안 함)로 건너뛸 수 있다. 설치되는 파일의 `docker-compose.yml` image 이름, devcontainer
 이름은 대상 디렉터리 이름으로 자동 치환된다. 왜 이런 구조인지는 설치된 DOCKER.md 참고.
-
-from scratch로 시작하는 경우엔 설치가 필요 없다 — 템플릿을 프로젝트로 직접 클론한 뒤
-`python3 install.py --print-gitignore >> .gitignore && rm install.py` 로 규칙만 추가하고 지운다.
 """
 
 import argparse
@@ -210,16 +207,10 @@ def main() -> int:
                     help="Docker/devcontainer 개발 환경 스캐폴드도 함께 설치")
     ap.add_argument("--without-docker", action="store_true",
                     help="Docker 스캐폴드 설치 안 함 (프롬프트 생략)")
-    ap.add_argument("--print-gitignore", action="store_true",
-                    help=".gitignore 블록만 출력하고 종료 (from scratch 시작용)")
     args = ap.parse_args()
 
     if args.with_docker and args.without_docker:
         ap.error("--with-docker와 --without-docker는 동시에 줄 수 없습니다.")
-
-    if args.print_gitignore:
-        sys.stdout.write(gitignore_text())
-        return 0
 
     want_docker = True if args.with_docker else (False if args.without_docker else None)
     return run_install(args.yes, want_docker)

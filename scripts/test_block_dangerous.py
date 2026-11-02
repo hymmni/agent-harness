@@ -49,7 +49,7 @@ def test_blocks_dangerous_command(command):
     "git push origin feat/fix-force",
     "git push origin main && ls -f",
     "git reset --soft HEAD~1",
-    "python3 scripts/execute.py plan.md",
+    "python3 scripts/setup.py",
 ])
 def test_allows_ordinary_command(command):
     assert run_command(command).returncode == 0
