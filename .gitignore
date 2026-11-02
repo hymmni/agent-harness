@@ -2,9 +2,10 @@ __pycache__/
 *.py[cod]
 
 # 런타임/작업 산출물 — 템플릿 레포는 이들을 추적하지 않는다.
-# (harness 소스인 scripts/ docs/ .claude/ CLAUDE.md 등은 이 레포의 '제품'이므로 추적한다.
+# (harness 소스인 scripts/ docs/ .agents/ .claude/ AGENTS.md 등은 이 레포의 '제품'이므로 추적한다.
 #  대상 프로젝트에 설치될 때 harness 파일을 무시시키는 규칙은 install.py의 GITIGNORE_BLOCK에 따로 있다.)
 references/
+scratch/
 continuation_plan.md
 experiments/*
 !experiments/.gitkeep
