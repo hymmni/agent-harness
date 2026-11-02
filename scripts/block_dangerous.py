@@ -23,7 +23,8 @@ DANGEROUS = re.compile(
     r"|--no-verify"
     r"|git\s+commit\b[^;&|]*\s-[a-z]*n\b"
     r"|--unset[^;&|]*core\.hooksPath"
-    r"|git\b[^;&|]*core\.hooksPath(?!\s*(\.githooks)?\s*($|[;&|]))",
+    r"|git\b[^;&|]*core\.hooksPath(?!\s*(\.githooks)?\s*($|[;&|]))"
+    r"|\bgh\s+pr\s+merge\b",
     re.IGNORECASE,
 )
 BLOCKED = "BLOCKED: 위험한 명령어가 감지되었습니다."

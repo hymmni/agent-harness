@@ -71,7 +71,7 @@
 | Antigravity | `.agents/hooks.json` (matcher `run_command`) | `toolCall.args.CommandLine` | stdout `{"decision":"deny","reason":...}` + exit 0 |
 
 - 어느 형식도 아니면 exit 2로 차단한다.
-- 차단 패턴에 `--no-verify`, `git commit -n`, `core.hooksPath` 변경을 추가한다.
+- 차단 패턴에 `--no-verify`, `git commit -n`, `core.hooksPath` 변경, `gh pr merge`를 추가한다. `gh pr merge`는 로컬 `pre-push`를 거치지 않고 서버에서 병합하기 때문이다.
 - `block_dangerous.py`의 `# ponytail:` 주석은 일반 주석으로 바꾸고 컨테이너 격리 문구를 지운다.
 - 세 설정 파일 모두 git으로 추적한다. 대상 프로젝트의 `.gitignore` 블록에 `!/.claude/settings.json`을 추가한다.
 - `references/` 쓰기 차단은 기존 `Edit(/references/**)`를 유지한다. Claude Code에서만 강제되고 나머지는 규칙 문구에 의존한다.

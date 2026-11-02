@@ -41,6 +41,8 @@ def assert_blocked(result: subprocess.CompletedProcess) -> None:
     "git -c core.hooksPath=/dev/null commit -m x",
     "git config core.hooksPath .git/hooks",
     "git config --unset core.hooksPath",
+    "gh pr merge 3 --merge",
+    "cd /tmp && gh pr merge",
 ])
 def test_blocks_dangerous_command(command):
     assert_blocked(run_command(command))
@@ -60,6 +62,8 @@ def test_blocks_dangerous_command(command):
     "git config core.hooksPath .githooks",
     "grep -n core.hooksPath AGENTS.md",
     'git commit -am "update"',
+    "gh pr create --fill",
+    "gh pr view 3",
 ])
 def test_allows_ordinary_command(command):
     assert run_command(command).returncode == 0
