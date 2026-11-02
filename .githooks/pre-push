@@ -1,0 +1,11 @@
+#!/bin/sh
+# main으로의 push를 막는다. 원격에 main이 아직 없는 첫 push와 태그 push는 허용한다.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = refs/heads/main ] || continue
+  case $remote_sha in
+    *[!0]*)
+      echo "BLOCKED: main으로 직접 push할 수 없습니다. 브랜치를 push하고 PR로 합치세요." >&2
+      exit 1
+      ;;
+  esac
+done
