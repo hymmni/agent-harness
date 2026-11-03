@@ -1,9 +1,11 @@
 #!/bin/sh
 # 커밋 메시지가 `타입(스코프): 제목`과 `- ` 본문을 갖췄는지 검사한다.
-message=$(grep -v '^#' "$1" | sed '/^[[:space:]]*$/d')
+message=$(sed '/^# -* >8 -*$/,$d' "$1" | grep -v '^#' | sed '/^[[:space:]]*$/d')
 
 case $message in
-  "Merge "*|'Revert "'*|"fixup! "*|"squash! "*) exit 0 ;;
+  "Merge branch "*|"Merge branches "*|"Merge remote-tracking branch "*|"Merge tag "*) exit 0 ;;
+  "Merge commit "*|"Merge pull request "*) exit 0 ;;
+  'Revert "'*|'Reapply "'*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
 esac
 
 if ! printf '%s\n' "$message" | sed -n 1p |

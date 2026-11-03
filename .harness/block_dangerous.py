@@ -14,24 +14,28 @@ import json
 import re
 import sys
 
-# 문자열 매칭이라 `rm -r -f`나 스크립트 경유는 못 잡는다.
+# 사고를 막는 문자열 매칭이다. 스크립트 경유나 공백이 든 `git -C "a b"`는 못 잡고, 커밋 메시지 안의
+# ` -n` 같은 글자는 잘못 잡는다. 잘못 잡히면 메시지를 파일로 넘기는 `git commit -F`를 쓴다.
+GIT = r"\bgit(?:\s+-c\s+\S+|\s+--[\w-]+(?:=\S+)?)*\s+"   # git -C dir, -c k=v, --git-dir=x
+SAME = r"[^;&|\n]*"                                      # 같은 셸 명령 안
 DANGEROUS = re.compile(
-    r"\brm\s+-[a-z]*(r[a-z]*f|f[a-z]*r)"
-    r"|git\s+push\b[^;&|]*\s(--force|-f)\b"
-    r"|git\s+reset\s+--hard"
+    rf"\brm(?={SAME}\s(-[a-z]*r|--recursive))(?={SAME}\s(-[a-z]*f|--force)){SAME}"
+    rf"|{GIT}push\b{SAME}\s(--force|-[a-z]*f[a-z]*\b|\+\S)"
+    rf"|{GIT}reset\b{SAME}\s--hard"
+    rf"|{GIT}clean\b{SAME}\s(-[a-z]*f|--force)"
     r"|DROP\s+TABLE"
-    r"|--no-verify"
-    r"|git\s+commit\b[^;&|]*\s-[a-z]*n\b"
-    r"|--unset[^;&|]*core\.hooksPath"
-    r"|git\b[^;&|]*core\.hooksPath(?!\s*(\.githooks)?\s*($|[;&|]))"
+    rf"|\bgit\b{SAME}\s--no-verify\b"
+    rf"|{GIT}commit\b{SAME}\s-[a-z]*n[a-z]*\b"
+    rf"|\bgit\b{SAME}\bunset\S*\s{SAME}core\.hooksPath"
+    rf"|\bgit\b{SAME}core\.hooksPath="
+    rf"|\bgit\b{SAME}core\.hooksPath[ \t]+(?!\.githooks[ \t]*($|[;&|)\n]))(?![012]?>|#|[;&|)])\S"
     r"|\bgh\s+pr\s+merge\b",
     re.IGNORECASE,
 )
-BLOCKED = "BLOCKED: 위험한 명령어가 감지되었습니다."
 
 
 def deny_json(reason: str) -> str:
-    return json.dumps({"decision": "deny", "reason": reason}, ensure_ascii=False)
+    return json.dumps({"decision": "deny", "reason": reason})
 
 
 def main() -> int:
@@ -41,17 +45,18 @@ def main() -> int:
         command = (payload["toolCall"]["args"]["CommandLine"] if antigravity
                    else payload["tool_input"]["command"])
         dangerous = DANGEROUS.search(command)
-    except (ValueError, KeyError, TypeError) as e:
+    except Exception as e:
         reason = f"BLOCKED: 훅 입력을 읽지 못했습니다 ({e!r})."
         print(deny_json(reason))
         print(reason, file=sys.stderr)
         return 2
     if not dangerous:
         return 0
+    reason = f"BLOCKED: 위험한 명령어가 감지되었습니다: {dangerous.group(0)}"
     if antigravity:
-        print(deny_json(BLOCKED))
+        print(deny_json(reason))
         return 0
-    print(BLOCKED, file=sys.stderr)
+    print(reason, file=sys.stderr)
     return 2
 
 

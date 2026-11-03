@@ -7,7 +7,7 @@
 
 ## 목표
 - 어떤 에이전트로 작업해도 같은 규칙을 읽고 같은 스킬을 쓰고 같은 안전장치가 동작한다.
-- 공용 파일에 특정 에이전트를 전제한 내용이 없다. 도구별 차이는 얇은 설정 파일과 `scripts/setup.py`의 표에만 둔다.
+- 공용 파일에 특정 에이전트를 전제한 내용이 없다. 도구별 차이는 얇은 설정 파일과 `.harness/setup.py`의 표에만 둔다.
 - main을 보호하고 브랜치·커밋·버전 규칙을 에이전트가 어기기 어렵게 만든다.
 - 일회용 스크립트와 실험 기록을 나중에 사람이 뒤져 정리하지 않아도 되게 한다.
 - 팀원이 clone 뒤 명령 하나로 같은 환경을 갖춘다.
@@ -36,7 +36,8 @@
 - 일회용 스크립트 전용 폴더를 둔다.
 - 버전과 릴리즈를 구분해 관리한다.
 - `scripts/execute.py`를 삭제한다. 플랜은 별도 실행기 없이 에이전트 세션에서 실행한다.
-- clone마다 한 번 실행하는 `scripts/setup.py`를 둔다.
+- clone마다 한 번 실행하는 `.harness/setup.py`를 둔다.
+- 하네스 스크립트는 `.harness/`에 둔다. `scripts/`는 프로젝트 전용으로 남긴다.
 - 필수 외부 의존성은 `superpowers`뿐이다. `mattpocock-skills`, `ponytail`, `i-have-adhd`는 개인 설정으로 둔다.
 
 ## 구성
@@ -49,7 +50,7 @@
   - `execute.py` 안내와 세션 연속 규칙을 지운다. 세션이 끊기면 `continuation_plan.md`나 플랜의 체크박스에서 이어 간다.
   - main 병합 규칙은 아래 브랜치 규칙으로 대체한다.
   - 세션 시작 체크리스트의 `*.state.json` 항목은 "현재 브랜치의 플랜에서 체크되지 않은 task부터 이어 간다"로 바꾼다.
-  - 세션 시작 체크리스트에 `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 scripts/setup.py`를 실행한다는 항목을 추가한다.
+  - 세션 시작 체크리스트에 `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 .harness/setup.py`를 실행한다는 항목을 추가한다.
   - 의존성은 프로젝트가 쓰는 파일(`pyproject.toml`, `requirements.txt`, `environment.yml`)에 추가한다고 적는다.
   - `docker-compose.yml`이 있으면 실행·테스트는 `docker compose exec dev <명령>`으로 한다고 적는다.
 - `CLAUDE.md`: `@AGENTS.md` 한 줄.
@@ -62,7 +63,7 @@
 - 플랜은 에이전트 세션에서 `superpowers:executing-plans`나 `superpowers:subagent-driven-development`로 실행하고, 끝난 step은 플랜에서 체크한다.
 
 ### 안전장치
-- `scripts/block_dangerous.py`는 두 입력 형식을 처리한다.
+- `.harness/block_dangerous.py`는 두 입력 형식을 처리한다.
 
 | 도구 | 설정 파일 | 명령 필드 | 차단 방식 |
 |---|---|---|---|
@@ -77,7 +78,7 @@
 - `references/` 쓰기 차단은 기존 `Edit(/references/**)`를 유지한다. Claude Code에서만 강제되고 나머지는 규칙 문구에 의존한다.
 
 ### 환경 설정
-- `scripts/setup.py`를 clone마다 한 번 실행한다. 여러 번 실행해도 결과가 같다.
+- `.harness/setup.py`를 clone마다 한 번 실행한다. 여러 번 실행해도 결과가 같다.
   - `core.hooksPath`를 `.githooks`로 설정한다. 이미 다른 값이 있거나 `.git/hooks`에 사용자 hook이 있으면 바꾸지 않고 경고한다.
   - 설치된 에이전트만 골라 `superpowers`를 사용자 범위로 설치한다. 이미 있으면 건너뛴다.
   - 자동화할 수 없는 신뢰 승인(Claude Code 폴더, Codex `/hooks`)을 안내한다.
@@ -117,9 +118,9 @@
   - 대상에 `AGENTS.md`나 `CLAUDE.md`가 있으면 덮어쓰지 않고 `*.harness.md`로 남긴다.
   - `--print-gitignore`를 삭제한다.
   - `scratch/` 디렉토리를 만든다.
-  - hook 연결은 `setup.py`에 맡기고, 완료 메시지에서 `python3 scripts/setup.py` 실행을 안내한다.
+  - hook 연결은 `setup.py`에 맡기고, 완료 메시지에서 `python3 .harness/setup.py` 실행을 안내한다.
 - `.gitignore` 블록: `/experiments/`를 빼고 `/scratch/`, `/AGENTS.harness.md`, `!/.claude/settings.json`, 대용량 패턴을 넣는다.
-- README는 적용 방법을 하나로 합치고 빈 프로젝트는 `git init` 후 같은 명령을 쓰게 한다. 빈 상태 시작 명령은 제거한다. 설치한 사람과 팀원은 clone마다 `python3 scripts/setup.py`를 실행한다고 적는다.
+- README는 적용 방법을 하나로 합치고 빈 프로젝트는 `git init` 후 같은 명령을 쓰게 한다. 빈 상태 시작 명령은 제거한다. 설치한 사람과 팀원은 clone마다 `python3 .harness/setup.py`를 실행한다고 적는다.
 
 ### Docker
 - 공용 파일에서 에이전트 관련 내용을 뺀다: `~/.claude` 마운트, `HOME` 덮어쓰기, Node feature, CLI 설치, `onCreateCommand`, `DOCKER.md`의 관련 설명.
@@ -136,6 +137,14 @@
 - `setup.py`가 새 clone에서 hook을 연결하고 세 도구에 `superpowers`를 설치하는가
 - Codex 설치 명령의 플러그인 이름이 맞는가
 - 에이전트가 git hook을 통과하는 브랜치와 커밋을 만드는가
+
+## 2026-11-03 변경
+독립 검토와 `manipulation_pipeline` 확인 뒤 다음을 바꿨다. 위 내용과 다르면 이 절이 우선한다.
+
+- 실험은 `feat/*`의 커밋이 아니라 개인 fork에서 한다. 첫 적용 대상의 `CONTRIBUTING.md`가 fork 방식이기 때문이다. `experiments/`는 git에서 제외하고, 양식은 새 clone에도 전달되도록 `.harness/LOG_TEMPLATE.md`로 옮겼다.
+- `pre-push`는 원격 이름이 `personal`일 때만 main push를 허용한다. `origin`만 막으면 공유 레포를 `upstream`으로 둔 clone에서 차단이 조용히 사라지므로, 예외를 하나만 두는 쪽을 택했다.
+- `.gitignore` 충돌 검사는 `setup.py`에 둔다. 설치 직후와 새 clone 양쪽에서 같은 검사가 돌아야 하기 때문이다.
+- 도입 전 브랜치의 hook 공백은 `.git/hooks` 연결 파일로 막지 않고 문서로 남긴다. 연결 파일은 main을 병합하지 않은 fork 실험 브랜치의 커밋까지 막아 "fork 안에서는 제약 없이"라는 약속과 충돌한다. main에 체크아웃한 동안의 보호는 그대로이고, 공백은 그런 브랜치에서 동작할 때로 한정된다.
 
 ## 구현자에게 맡기는 것
 - 파일 내부 구조, 함수 이름, 커밋 분할

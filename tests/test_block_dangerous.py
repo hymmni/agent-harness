@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-HOOK = Path(__file__).with_name("block_dangerous.py")
+HOOK = Path(__file__).resolve().parent.parent / ".harness/block_dangerous.py"
 
 
 def run_hook(stdin: str) -> subprocess.CompletedProcess:
@@ -43,9 +43,27 @@ def assert_blocked(result: subprocess.CompletedProcess) -> None:
     "git config --unset core.hooksPath",
     "gh pr merge 3 --merge",
     "cd /tmp && gh pr merge",
+    "rm -v -rf x",
+    "rm -r -f x",
+    "rm -f -r x",
+    "rm --recursive --force x",
+    "git -C . reset --hard",
+    "git -C . push --force",
+    "git reset HEAD~1 --hard",
+    "git push -uf origin x",
+    "git push origin +feat/x",
+    "git clean -fdx",
+    "git clean --force",
+    "git commit -nm x",
+    "git -C . commit -n -m x",
+    "git push origin feat/x --force-with-lease",
 ])
 def test_blocks_dangerous_command(command):
     assert_blocked(run_command(command))
+
+
+def test_message_names_the_matched_text():
+    assert "git reset --hard" in run_command("ls; git reset --hard HEAD~1").stderr
 
 
 @pytest.mark.parametrize("command", [
@@ -57,13 +75,21 @@ def test_blocks_dangerous_command(command):
     "git push origin feat/fix-force",
     "git push origin main && ls -f",
     "git reset --soft HEAD~1",
-    "python3 scripts/setup.py",
+    "python3 .harness/setup.py",
     "git config core.hooksPath",
     "git config core.hooksPath .githooks",
     "grep -n core.hooksPath AGENTS.md",
     'git commit -am "update"',
     "gh pr create --fill",
     "gh pr view 3",
+    'test "$(git config core.hooksPath)" = .githooks && echo ok',
+    "git config core.hooksPath 2>/dev/null",
+    "git config --get core.hooksPath",
+    "git commit -F msg.txt\ngit log -n 1",
+    "python train.py --no-verify-ssl",
+    "git clean -nd",
+    "git push --follow-tags origin feat/x",
+    "git commit --amend --no-edit",
 ])
 def test_allows_ordinary_command(command):
     assert run_command(command).returncode == 0
@@ -74,6 +100,7 @@ UNREADABLE = [
     '{"tool_input": {"command": 5}}',
     '{"toolCall": {}}',
     '{"toolCall": {"args": {"CommandLine": 5}}}',
+    pytest.param("[" * 200_000, id="deep-json"),
 ]
 
 

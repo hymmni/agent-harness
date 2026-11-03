@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/block_dangerous.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.harness/block_dangerous.py\""
           }
         ]
       }

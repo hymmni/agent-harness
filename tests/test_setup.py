@@ -1,4 +1,5 @@
 """가짜 에이전트 CLI를 둔 임시 저장소에서 setup.py를 실제로 실행해 검사한다."""
+import importlib.util
 import os
 import shutil
 import stat
@@ -8,7 +9,8 @@ from pathlib import Path
 
 import pytest
 
-SETUP = Path(__file__).resolve().parent.parent / "scripts/setup.py"
+ROOT = Path(__file__).resolve().parent.parent
+SETUP = ROOT / ".harness/setup.py"
 GIT_DIR = str(Path(shutil.which("git")).parent)
 ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
 
@@ -29,6 +31,19 @@ def hooks_path(repo):
     return git(repo, "config", "core.hooksPath").stdout.strip()
 
 
+def shared_files():
+    spec = importlib.util.spec_from_file_location("harness_setup", SETUP)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.SHARED_FILES
+
+
+def place_shared_files(path):
+    for rel in shared_files():
+        (path / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, path / rel)
+
+
 @pytest.fixture
 def bin_dir(tmp_path):
     path = tmp_path / "bin"
@@ -39,8 +54,7 @@ def bin_dir(tmp_path):
 @pytest.fixture
 def repo(tmp_path):
     path = tmp_path / "repo"
-    (path / "scripts").mkdir(parents=True)
-    shutil.copy2(SETUP, path / "scripts/setup.py")
+    place_shared_files(path)
     git(path, "init", "-q", "-b", "main")
     return path
 
@@ -64,7 +78,7 @@ def calls(bin_dir, name):
 
 def run_setup(repo, bin_dir):
     env = {**ENV, "PATH": f"{bin_dir}{os.pathsep}{GIT_DIR}"}
-    return subprocess.run([sys.executable, "scripts/setup.py"], cwd=repo,
+    return subprocess.run([sys.executable, ".harness/setup.py"], cwd=repo,
                           capture_output=True, text=True, env=env)
 
 
@@ -93,10 +107,72 @@ def test_sample_hooks_do_not_count(repo, bin_dir):
     assert hooks_path(repo) == ".githooks"
 
 
+def test_directories_do_not_count_as_hooks(repo, bin_dir):
+    (repo / ".git/hooks/helpers").mkdir()
+    assert run_setup(repo, bin_dir).returncode == 0
+    assert hooks_path(repo) == ".githooks"
+
+
+def test_agent_that_cannot_start_is_reported(repo, bin_dir):
+    agent = bin_dir / "codex"
+    agent.write_text("#!/nonexistent/interpreter\n")
+    agent.chmod(0o755)
+    result = run_setup(repo, bin_dir)
+    assert INSTALL["codex"] in result.stdout and result.returncode == 1
+
+
+def test_reports_failed_hook_connection(repo, bin_dir):
+    (repo / ".git/config.lock").touch()
+    result = run_setup(repo, bin_dir)
+    assert "연결했습니다" not in result.stdout and result.returncode == 1
+
+
+def test_reports_harness_below_repo_root(tmp_path, bin_dir):
+    outer = tmp_path / "outer"
+    project = outer / "sub"
+    place_shared_files(project)
+    git(outer, "init", "-q", "-b", "main")
+    result = run_setup(project, bin_dir)
+    assert hooks_path(project) == ""
+    assert "루트" in result.stdout and result.returncode == 1
+
+
+def test_reports_shared_files_excluded_by_gitignore(repo, bin_dir):
+    (repo / ".gitignore").write_text(".claude/\nCLAUDE.md\ndocs/\n")
+    result = run_setup(repo, bin_dir)
+    for rel in (".claude/settings.json", ".claude/skills/harness/SKILL.md", "CLAUDE.md", "docs/ADR.md"):
+        assert rel in result.stdout
+    assert result.returncode == 1
+
+
+def test_accepts_tracked_file_matching_gitignore(repo, bin_dir):
+    (repo / ".gitignore").write_text("CLAUDE.md\n")
+    git(repo, "add", "-f", "CLAUDE.md")
+    assert run_setup(repo, bin_dir).returncode == 0
+
+
+def test_reports_missing_shared_file(repo, bin_dir):
+    (repo / ".codex/hooks.json").unlink()
+    result = run_setup(repo, bin_dir)
+    assert ".codex/hooks.json" in result.stdout and result.returncode == 1
+
+
+def test_reports_hook_without_execute_permission(repo, bin_dir):
+    (repo / ".githooks/pre-push").chmod(0o644)
+    result = run_setup(repo, bin_dir)
+    assert ".githooks/pre-push" in result.stdout and result.returncode == 1
+
+
+def test_reports_claude_md_without_import(repo, bin_dir):
+    (repo / "CLAUDE.md").write_text("mine\n")
+    result = run_setup(repo, bin_dir)
+    assert "@AGENTS.md" in result.stdout and result.returncode == 1
+
+
 def test_outside_git_repo_explains_git_init(tmp_path, bin_dir):
     path = tmp_path / "plain"
-    (path / "scripts").mkdir(parents=True)
-    shutil.copy2(SETUP, path / "scripts/setup.py")
+    (path / ".harness").mkdir(parents=True)
+    shutil.copy2(SETUP, path / ".harness/setup.py")
     result = run_setup(path, bin_dir)
     assert "git init" in result.stdout and result.returncode == 1
 

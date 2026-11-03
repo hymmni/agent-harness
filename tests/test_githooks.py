@@ -55,7 +55,9 @@ def test_second_commit_on_main_is_blocked(repo):
     assert result.returncode != 0 and "main" in result.stderr
 
 
-@pytest.mark.parametrize("branch", ["feat/ok", "hotfix/can-timeout", "fix/a.b_c"])
+@pytest.mark.parametrize("branch", [
+    "feat/ok", "fix/a.b_c", "hotfix/can-timeout", "refactor/x", "docs/x", "chore/x",
+])
 def test_allowed_branch_names(repo, branch):
     git(repo, "switch", "-q", "-c", branch)
     assert commit(repo).returncode == 0
@@ -88,16 +90,45 @@ def test_merge_between_feature_branches_is_allowed(repo):
     assert git(repo, "merge", "--no-ff", "--no-edit", "feat/y").returncode == 0
 
 
-@pytest.mark.parametrize("message", ["add thing", "feat(core): add thing", "feat: add thing\n\n- x"])
+@pytest.mark.parametrize("message", [
+    "add thing", "feat(core): add thing", "feat: add thing\n\n- x", "Merge stuff", "Reverted x",
+])
 def test_bad_commit_message_is_blocked(repo, message):
     git(repo, "switch", "-q", "-c", "feat/x")
     assert commit(repo, message).returncode != 0
 
 
-@pytest.mark.parametrize("message", ["Merge branch 'x'", 'Revert "x"', "fixup! x", "squash! x"])
+@pytest.mark.parametrize("message", [
+    "Merge branch 'x'", "Merge branches 'a' and 'b'", "Merge remote-tracking branch 'origin/x'",
+    "Merge tag 'v1'", "Merge commit 'abc'", "Merge pull request #1 from x/y",
+    'Revert "x"', 'Reapply "x"', "fixup! x", "squash! x", "amend! x",
+])
 def test_generated_commit_message_is_allowed(repo, message):
     git(repo, "switch", "-q", "-c", "feat/x")
     assert commit(repo, message).returncode == 0
+
+
+@pytest.mark.parametrize("kind", ["feat", "fix", "hotfix", "refactor", "docs", "chore", "test", "wip"])
+def test_commit_types_are_allowed(repo, kind):
+    git(repo, "switch", "-q", "-c", "feat/x")
+    assert commit(repo, f"{kind}(core): add thing\n\n- explain thing").returncode == 0
+
+
+@pytest.mark.parametrize("message", [
+    # `git commit -v`의 diff는 scissors 줄 아래에 있고, 그 안의 삭제 줄이 `- `로 시작할 수 있다.
+    "feat(core): add thing\n\n# ------------------------ >8 ------------------------\n- old line\n",
+    "feat(core): add thing\n\n-no space\n",
+])
+def test_body_needs_a_real_bullet(tmp_path, message):
+    path = tmp_path / "COMMIT_EDITMSG"
+    path.write_text(message)
+    assert subprocess.run([HOOKS / "commit-msg", path], capture_output=True).returncode != 0
+
+
+def test_comment_above_message_is_ignored(tmp_path):
+    path = tmp_path / "COMMIT_EDITMSG"
+    path.write_text("# template note\nfeat(core): add thing\n\n- explain thing\n")
+    assert subprocess.run([HOOKS / "commit-msg", path], capture_output=True).returncode == 0
 
 
 def test_first_push_of_main_is_allowed(repo, remote):
@@ -108,6 +139,33 @@ def test_push_to_existing_main_is_blocked(repo, remote):
     git(repo, "push", "-q", "origin", "main")
     assert commit(repo, GOOD, "--no-verify").returncode == 0
     result = git(repo, "push", "-q", "origin", "main")
+    assert result.returncode != 0 and "main" in result.stderr
+
+
+def test_push_of_branch_onto_main_is_blocked(repo, remote):
+    git(repo, "push", "-q", "origin", "main")
+    git(repo, "switch", "-q", "-c", "feat/x")
+    commit(repo)
+    result = git(repo, "push", "-q", "origin", "feat/x:main")
+    assert result.returncode != 0 and "main" in result.stderr
+
+
+def add_remote_with_main(repo, tmp_path, name):
+    path = tmp_path / f"{name}.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(path)], check=True, env=ENV)
+    git(repo, "remote", "add", name, str(path))
+    git(repo, "push", "-q", name, "main")
+    assert commit(repo, GOOD, "--no-verify").returncode == 0
+
+
+def test_main_can_sync_to_personal_fork(repo, tmp_path):
+    add_remote_with_main(repo, tmp_path, "personal")
+    assert git(repo, "push", "-q", "personal", "main").returncode == 0
+
+
+def test_main_push_to_any_other_remote_is_blocked(repo, tmp_path):
+    add_remote_with_main(repo, tmp_path, "upstream")
+    result = git(repo, "push", "-q", "upstream", "main")
     assert result.returncode != 0 and "main" in result.stderr
 
 
@@ -123,3 +181,10 @@ def test_feature_branch_and_tag_push_are_allowed(repo, remote):
 @pytest.mark.parametrize("name", ["pre-commit", "pre-merge-commit", "commit-msg", "pre-push"])
 def test_hook_is_executable(name):
     assert os.access(HOOKS / name, os.X_OK)
+
+
+@pytest.mark.parametrize("name", ["pre-commit", "pre-merge-commit", "commit-msg", "pre-push"])
+def test_hook_mode_reaches_new_clones(name):
+    entry = subprocess.run(["git", "ls-files", "-s", f".githooks/{name}"], cwd=HOOKS.parent,
+                           capture_output=True, text=True).stdout
+    assert entry.startswith("100755")

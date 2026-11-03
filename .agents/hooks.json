@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/block_dangerous.py\"",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.harness/block_dangerous.py\"",
             "timeout": 10
           }
         ]
