@@ -12,7 +12,9 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 SETUP = ROOT / ".harness/setup.py"
 GIT_DIR = str(Path(shutil.which("git")).parent)
-ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
+# XDG_CONFIG_HOME도 막는다. 그렇지 않으면 사용자 전역 제외 파일(~/.config/git/ignore)이 결과를 바꾼다.
+ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+       "XDG_CONFIG_HOME": os.devnull}
 
 INSTALL = {
     "claude": "plugin install superpowers --marketplace anthropics/claude-plugins-official",
@@ -31,11 +33,27 @@ def hooks_path(repo):
     return git(repo, "config", "core.hooksPath").stdout.strip()
 
 
-def shared_files():
+IGNORED = [
+    "docs/private/x", "references/x", "scratch/x", "experiments/feat-x/log.md", "continuation_plan.md",
+    "a.pth", "a.pt", "a.ckpt", "a.safetensors", "d.zarr/x", "symlinked.zarr", "a.hdf5", "a.h5",
+    "wandb/x", "outputs/x", ".env", ".claude/settings.local.json",
+]
+TRACKED = [
+    ".claude/settings.json", ".claude/skills/harness/SKILL.md", ".copier-answers.yml", "docs/ADR.md",
+]
+BEGIN = "# >>> harness gitignore (managed) >>>"
+END = "# <<< harness gitignore (managed) <<<"
+
+
+def load_setup():
     spec = importlib.util.spec_from_file_location("harness_setup", SETUP)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.SHARED_FILES
+    return module
+
+
+def shared_files():
+    return load_setup().SHARED_FILES
 
 
 def place_shared_files(path):
@@ -105,6 +123,45 @@ def test_sample_hooks_do_not_count(repo, bin_dir):
     (repo / ".git/hooks/pre-commit.sample").write_text("#!/bin/sh\n")
     assert run_setup(repo, bin_dir).returncode == 0
     assert hooks_path(repo) == ".githooks"
+
+
+@pytest.mark.parametrize("rel", IGNORED)
+def test_ignores_local_and_large_files(repo, bin_dir, rel):
+    run_setup(repo, bin_dir)
+    assert git(repo, "check-ignore", "-q", rel).returncode == 0
+
+
+@pytest.mark.parametrize("rel", TRACKED)
+def test_keeps_shared_files_tracked(repo, bin_dir, rel):
+    run_setup(repo, bin_dir)
+    assert git(repo, "check-ignore", "-q", rel).returncode == 1
+
+
+def test_appends_block_after_existing_rules(repo, bin_dir):
+    (repo / ".gitignore").write_text("data/")
+    run_setup(repo, bin_dir)
+    text = (repo / ".gitignore").read_text()
+    assert text.startswith("data/\n\n" + BEGIN) and text.endswith(END + "\n")
+
+
+def test_replaces_outdated_managed_block(repo, bin_dir):
+    (repo / ".gitignore").write_text(f"before\n\n{BEGIN}\n/docs/\n{END}\n\nafter\n")
+    run_setup(repo, bin_dir)
+    text = (repo / ".gitignore").read_text()
+    assert "/docs/\n" not in text and "/scratch/" in text and text.count(BEGIN) == 1
+    assert text.startswith("before\n\n") and text.endswith("\n\nafter\n")
+
+
+def test_second_run_leaves_gitignore_unchanged(repo, bin_dir):
+    run_setup(repo, bin_dir)
+    before = (repo / ".gitignore").read_text()
+    result = run_setup(repo, bin_dir)
+    assert (repo / ".gitignore").read_text() == before and ".gitignore" not in result.stdout
+
+
+def test_template_gitignore_has_current_block():
+    text = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert load_setup().gitignore_with_block(text) == text
 
 
 def test_directories_do_not_count_as_hooks(repo, bin_dir):

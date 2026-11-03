@@ -7,10 +7,18 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
+
+def docker(name):
+    """copier가 with_docker를 고른 경우에만 만드는 경로."""
+    return f"{{% if with_docker %}}{name}{{% endif %}}"
+
+
+COMPOSE = docker("docker-compose.yml") + ".jinja"
+DEVCONTAINER = docker(".devcontainer") + "/devcontainer.json.jinja"
+DOCKERFILE = docker("docker") + "/Dockerfile"
 SHARED_FILES = [
     "AGENTS.md", ".agents/skills/harness/SKILL.md", "docs/ROBOT_GUIDE.md",
-    "docker-optional/DOCKER.md", "docker-optional/docker-compose.yml",
-    "docker-optional/.devcontainer/devcontainer.json", "docker-optional/docker/Dockerfile",
+    docker("DOCKER.md"), COMPOSE, DEVCONTAINER, DOCKERFILE,
 ]
 FORBIDDEN = (
     r"claude|codex|antigravity|클로드|fable|opus|sonnet|haiku|AskUserQuestion|/compact|/clear"
@@ -32,7 +40,7 @@ def test_shared_file_names_no_agent(rel):
     "feat|fix|hotfix|refactor|docs|chore", "scratch/", "experiments/<",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert",
-    "personal", ".harness/LOG_TEMPLATE.md", "git add -f", "rebase",
+    "personal", ".harness/LOG_TEMPLATE.md", "git add -f", "rebase", "copier update",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
@@ -47,17 +55,17 @@ def test_claude_skill_points_to_shared_skill():
 
 
 def test_devcontainer_installs_no_agent():
-    text = (ROOT / "docker-optional/.devcontainer/devcontainer.json").read_text(encoding="utf-8")
+    text = (ROOT / DEVCONTAINER).read_text(encoding="utf-8")
     config = json.loads(text)
     assert "postCreateCommand" not in config and "onCreateCommand" not in config
     assert not any("node" in feature for feature in config["features"])
 
 
 def test_compose_mounts_no_home():
-    compose = (ROOT / "docker-optional/docker-compose.yml").read_text(encoding="utf-8")
+    compose = (ROOT / COMPOSE).read_text(encoding="utf-8")
     assert "HOME=" not in compose and "${HOME}" not in compose
 
 
 def test_dockerfile_has_no_foreign_reference():
-    dockerfile = (ROOT / "docker-optional/docker/Dockerfile").read_text(encoding="utf-8")
+    dockerfile = (ROOT / DOCKERFILE).read_text(encoding="utf-8")
     assert "self-improving-gym" not in dockerfile

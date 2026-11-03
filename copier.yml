@@ -1,0 +1,37 @@
+# 하네스를 프로젝트에 설치(copier copy)하고 갱신(copier update)하는 설정. 사용법은 README를 참고한다.
+_min_copier_version: "9.0"
+
+# 이 레포 루트가 템플릿이다. 아래는 템플릿 개발용이라 프로젝트로 복사하지 않는다.
+# 새 파일을 루트에 추가하면 tests/test_copier.py가 복사 여부를 결정하라고 실패한다.
+_exclude:
+  - copier.yml
+  - .git
+  - .gitignore
+  - README.md
+  - tests
+  - docs/superpowers
+  - references
+  - experiments
+  - scratch
+  - __pycache__
+  - "*.py[co]"
+  - .pytest_cache
+  - .superpowers
+
+# 프로젝트가 채워 쓰는 파일은 처음 한 번만 만들고, 갱신할 때 덮어쓰지 않는다.
+_skip_if_exists:
+  - docs/ADR.md
+  - docs/ARCHITECTURE.md
+  - docs/private/ENVIRONMENT.md
+  - requirements.txt
+
+with_docker:
+  type: bool
+  default: false
+  help: Docker/devcontainer 개발 환경 스캐폴드도 설치할까요? (DOCKER.md 참고)
+
+project_slug:
+  type: str
+  default: "{{ _folder_name | lower | regex_replace('[^a-z0-9._-]+', '-') }}"
+  help: Docker 이미지 이름
+  when: "{{ with_docker }}"

@@ -3,9 +3,10 @@
 clone마다 한 번 실행하는 설정 스크립트. 여러 번 실행해도 결과가 같다.
 
 1. git hook을 .githooks에 연결한다. git은 이 설정을 clone으로 전달하지 않는다.
-2. 하네스 공유 파일이 팀원에게 전달되는 상태인지 검사한다.
-3. 설치된 에이전트에 필수 플러그인 superpowers를 사용자 범위로 설치한다.
-4. 자동화할 수 없는 승인 단계를 안내한다.
+2. .gitignore의 하네스 블록을 최신 내용으로 맞춘다. copier는 기존 파일에 덧붙이지 못해 여기서 한다.
+3. 하네스 공유 파일이 팀원에게 전달되는 상태인지 검사한다.
+4. 설치된 에이전트에 필수 플러그인 superpowers를 사용자 범위로 설치한다.
+5. 자동화할 수 없는 승인 단계를 안내한다.
 
 끝나지 않은 항목이 있으면 exit 1로 끝난다.
 """
@@ -13,6 +14,7 @@ clone마다 한 번 실행하는 설정 스크립트. 여러 번 실행해도 �
 from __future__ import annotations
 
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -29,6 +31,29 @@ SHARED_FILES = (
     ".harness/LOG_TEMPLATE.md", ".harness/block_dangerous.py", ".harness/setup.py",
     "docs/ADR.md", "docs/ARCHITECTURE.md", "docs/ROBOT_GUIDE.md",
 )
+GITIGNORE_BEGIN = "# >>> harness gitignore (managed) >>>"
+GITIGNORE_END = "# <<< harness gitignore (managed) <<<"
+GITIGNORE_BLOCK = f"""{GITIGNORE_BEGIN}
+/.claude/*
+!/.claude/skills/
+!/.claude/settings.json
+/docs/private/
+/experiments/
+/references/
+/scratch/
+/continuation_plan.md
+.env
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.zarr
+*.hdf5
+*.h5
+wandb/
+outputs/
+{GITIGNORE_END}
+"""
 COMMAND_TIMEOUT = 300
 SUPERPOWERS = {
     "claude": ["claude", "plugin", "install", "superpowers",
@@ -68,6 +93,26 @@ def connect_git_hooks(root: Path) -> tuple[bool, str]:
     if result.returncode != 0:
         return False, f"git hook: 연결하지 못했습니다. {result.stderr.strip()}"
     return True, f"git hook: {HOOKS_DIR}에 연결했습니다."
+
+
+def gitignore_with_block(text: str) -> str:
+    """하네스 블록이 있으면 최신 내용으로 바꾸고, 없으면 끝에 붙인다. 블록 밖은 그대로 둔다."""
+    block = re.compile(f"{re.escape(GITIGNORE_BEGIN)}.*?{re.escape(GITIGNORE_END)}\n?", re.DOTALL)
+    if block.search(text):
+        return block.sub(lambda _: GITIGNORE_BLOCK, text, count=1)
+    if not text.strip():
+        return GITIGNORE_BLOCK
+    return text.rstrip("\n") + "\n\n" + GITIGNORE_BLOCK
+
+
+def update_gitignore(root: Path) -> str | None:
+    path = root / ".gitignore"
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    updated = gitignore_with_block(text)
+    if updated == text:
+        return None
+    path.write_text(updated, encoding="utf-8")
+    return ".gitignore: 하네스 블록을 최신 내용으로 맞췄습니다. 이 변경도 커밋하세요."
 
 
 def shared_file_problems(root: Path) -> list[str]:
@@ -113,6 +158,10 @@ def main() -> int:
 
     complete, message = connect_git_hooks(root)
     print(message)
+
+    message = update_gitignore(root)
+    if message:
+        print(message)
 
     problems = shared_file_problems(root)
     for problem in problems:

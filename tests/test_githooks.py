@@ -70,6 +70,14 @@ def test_blocked_branch_names(repo, branch):
     assert result.returncode != 0 and branch in result.stderr
 
 
+def test_conflict_markers_block_commit(repo):
+    git(repo, "switch", "-q", "-c", "feat/x")
+    (repo / "rules.md").write_text("<<<<<<< before updating\na\n=======\nb\n>>>>>>> after updating\n")
+    git(repo, "add", "rules.md")
+    result = git(repo, "commit", "-q", "-m", GOOD)
+    assert result.returncode != 0 and "충돌" in result.stderr
+
+
 def test_detached_head_commit_is_allowed(repo):
     git(repo, "switch", "-q", "--detach")
     assert commit(repo).returncode == 0

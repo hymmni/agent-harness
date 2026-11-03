@@ -64,4 +64,5 @@
 | **단순 작업** | 단순 수정, 문서 작성, 빠른 조회성 작업 |
 
 ## 🛠️ 유틸리티 명령어
-- `python3 .harness/setup.py` # clone마다 한 번 실행: git hook 연결, 설치된 에이전트에 `superpowers` 설치
+- `python3 .harness/setup.py` # clone마다 한 번 실행: git hook 연결, `.gitignore` 블록과 공유 파일 검사, 설치된 에이전트에 `superpowers` 설치
+- `copier update` # 하네스 갱신. 사용자 동의를 받아 브랜치에서 실행하고, 이어서 `python3 .harness/setup.py`를 실행한 뒤 충돌 표시를 해결한다
