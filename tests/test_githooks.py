@@ -88,16 +88,29 @@ def test_merge_between_feature_branches_is_allowed(repo):
     assert git(repo, "merge", "--no-ff", "--no-edit", "feat/y").returncode == 0
 
 
-@pytest.mark.parametrize("message", ["add thing", "feat(core): add thing", "feat: add thing\n\n- x"])
+@pytest.mark.parametrize("message", [
+    "add thing", "feat(core): add thing", "feat: add thing\n\n- x", "Merge stuff", "Reverted x",
+])
 def test_bad_commit_message_is_blocked(repo, message):
     git(repo, "switch", "-q", "-c", "feat/x")
     assert commit(repo, message).returncode != 0
 
 
-@pytest.mark.parametrize("message", ["Merge branch 'x'", 'Revert "x"', "fixup! x", "squash! x"])
+@pytest.mark.parametrize("message", [
+    "Merge branch 'x'", "Merge branches 'a' and 'b'", "Merge remote-tracking branch 'origin/x'",
+    "Merge tag 'v1'", "Merge commit 'abc'", "Merge pull request #1 from x/y",
+    'Revert "x"', 'Reapply "x"', "fixup! x", "squash! x", "amend! x",
+])
 def test_generated_commit_message_is_allowed(repo, message):
     git(repo, "switch", "-q", "-c", "feat/x")
     assert commit(repo, message).returncode == 0
+
+
+def test_verbose_diff_does_not_count_as_body(tmp_path):
+    # `git commit -v`의 diff는 scissors 줄 아래에 있고, 그 안의 삭제 줄이 `- `로 시작할 수 있다.
+    message = tmp_path / "COMMIT_EDITMSG"
+    message.write_text("feat(core): add thing\n\n# ------------------------ >8 ------------------------\n- old line\n")
+    assert subprocess.run([HOOKS / "commit-msg", message], capture_output=True).returncode != 0
 
 
 def test_first_push_of_main_is_allowed(repo, remote):
@@ -108,6 +121,33 @@ def test_push_to_existing_main_is_blocked(repo, remote):
     git(repo, "push", "-q", "origin", "main")
     assert commit(repo, GOOD, "--no-verify").returncode == 0
     result = git(repo, "push", "-q", "origin", "main")
+    assert result.returncode != 0 and "main" in result.stderr
+
+
+def test_push_of_branch_onto_main_is_blocked(repo, remote):
+    git(repo, "push", "-q", "origin", "main")
+    git(repo, "switch", "-q", "-c", "feat/x")
+    commit(repo)
+    result = git(repo, "push", "-q", "origin", "feat/x:main")
+    assert result.returncode != 0 and "main" in result.stderr
+
+
+def add_remote_with_main(repo, tmp_path, name):
+    path = tmp_path / f"{name}.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(path)], check=True, env=ENV)
+    git(repo, "remote", "add", name, str(path))
+    git(repo, "push", "-q", name, "main")
+    assert commit(repo, GOOD, "--no-verify").returncode == 0
+
+
+def test_main_can_sync_to_personal_fork(repo, tmp_path):
+    add_remote_with_main(repo, tmp_path, "personal")
+    assert git(repo, "push", "-q", "personal", "main").returncode == 0
+
+
+def test_main_push_to_any_other_remote_is_blocked(repo, tmp_path):
+    add_remote_with_main(repo, tmp_path, "upstream")
+    result = git(repo, "push", "-q", "upstream", "main")
     assert result.returncode != 0 and "main" in result.stderr
 
 
