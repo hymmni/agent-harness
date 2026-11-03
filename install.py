@@ -14,8 +14,8 @@ Harness 부트스트랩 설치기 — 작업 레포 안에 클론한 템플릿�
     3. harness 디렉토리(experiments/ references/ scratch/) 생성
     4. 클론 디렉토리(harness/)를 통째로 삭제해 스스로 정리
 
-빈 프로젝트는 `git init` 후 같은 방법으로 적용한다. git hook 연결과 플러그인 설치는
-clone마다 필요하므로 설치 후 `python3 .harness/setup.py`로 한다.
+빈 프로젝트는 `git init -b main` 후 같은 방법으로 적용한다. git hook 연결, 공유 파일 검사,
+플러그인 설치는 clone마다 필요하므로 설치 후 `python3 .harness/setup.py`로 한다.
 
 기존 파일을 절대 덮어쓰지 않는다(비파괴). 기존 AGENTS.md 나 CLAUDE.md 가 있으면 harness
 버전을 *.harness.md 로 남겨 수동 병합하게 한다.
@@ -29,10 +29,8 @@ Docker/devcontainer 개발 환경(docker-optional/)은 기본적으로 설치하
 import argparse
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 CLONE_ROOT = Path(__file__).resolve().parent   # 클론된 템플릿 루트 (= harness/)
 TARGET_ROOT = CLONE_ROOT.parent                # 적용 대상 프로젝트 루트
@@ -57,6 +55,7 @@ GITIGNORE_BLOCK = """\
 !/.claude/skills/
 !/.claude/settings.json
 /docs/private/
+/experiments/
 /references/
 /scratch/
 /continuation_plan.md
@@ -64,7 +63,7 @@ GITIGNORE_BLOCK = """\
 *.pt
 *.ckpt
 *.safetensors
-*.zarr/
+*.zarr
 *.hdf5
 *.h5
 wandb/
@@ -144,8 +143,13 @@ def gitignore_text() -> str:
 
 def install_gitignore(target: Path) -> str:
     existing = target.read_text(encoding="utf-8") if target.exists() else ""
-    if GITIGNORE_BEGIN in existing:
-        return ".gitignore: 이미 harness 블록 존재 (변경 없음)"
+    block = re.compile(f"{re.escape(GITIGNORE_BEGIN)}.*?{re.escape(GITIGNORE_END)}\n?", re.DOTALL)
+    if block.search(existing):
+        updated = block.sub(lambda _: gitignore_text(), existing, count=1)
+        if updated == existing:
+            return ".gitignore: 이미 harness 블록 존재 (변경 없음)"
+        target.write_text(updated, encoding="utf-8")
+        return ".gitignore: harness 블록을 최신 내용으로 교체"
     sep = "" if existing == "" or existing.endswith("\n") else "\n"
     gap = "\n" if existing.strip() else ""
     target.write_text(existing + sep + gap + gitignore_text(), encoding="utf-8")
@@ -170,15 +174,6 @@ def copy_tree(src: Path, dst: Path, skipped: list, top: bool = True) -> int:
     return count
 
 
-def warn_ignored_experiments(target: Path) -> Optional[str]:
-    """experiments/ 가 추적되어야 하는데 대상의 기존 규칙이 제외하고 있으면 경고문을 반환."""
-    ignored = subprocess.run(["git", "-C", str(target), "check-ignore", "-q", "experiments/feat-x/log.md"],
-                             capture_output=True)
-    if ignored.returncode == 0:
-        return "  ⚠ 기존 .gitignore가 experiments/를 제외합니다. 실험 기록을 공유하려면 그 규칙을 지우세요."
-    return None
-
-
 def confirm(prompt: str, assume_yes: bool) -> bool:
     if assume_yes:
         return True
@@ -189,8 +184,9 @@ def confirm(prompt: str, assume_yes: bool) -> bool:
 
 
 def run_install(assume_yes: bool, want_docker=None) -> int:
-    if not (CLONE_ROOT / "AGENTS.md").exists():
-        print("  ERROR: 이 스크립트는 git clone한 harness 템플릿 안에서 실행해야 합니다.")
+    # 끝에 CLONE_ROOT를 지우므로, 이름이 다른 템플릿 작업본에서 잘못 실행해도 지우지 않게 막는다.
+    if CLONE_ROOT.name != "harness" or not (CLONE_ROOT / "AGENTS.md").exists():
+        print("  ERROR: 이 스크립트는 프로젝트 안에 harness/로 clone한 템플릿에서 실행해야 합니다.")
         print("         cd <your-project> && git clone <url> harness && python3 harness/install.py")
         return 1
 
@@ -233,10 +229,8 @@ def run_install(assume_yes: bool, want_docker=None) -> int:
     if others:
         print(f"  ⚠ 기존 파일이 있어 복사하지 않았습니다: {', '.join(others)}")
         print("    hook 설정이 있으면 하네스 내용을 직접 병합하세요.")
-    warning = warn_ignored_experiments(TARGET_ROOT)
-    if warning:
-        print(warning)
-    print("  ✓ 완료. 이제 프로젝트 루트에서 `python3 .harness/setup.py`를 실행하세요.\n")
+    print("  ✓ 완료. 이제 프로젝트 루트에서 `python3 .harness/setup.py`를 실행하세요.")
+    print("    공유 파일이 .gitignore에 제외되어 있으면 setup.py가 알려 줍니다.\n")
     return 0
 
 

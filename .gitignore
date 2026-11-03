@@ -7,6 +7,4 @@ __pycache__/
 references/
 scratch/
 continuation_plan.md
-experiments/*
-!experiments/.gitkeep
-!experiments/LOG_TEMPLATE.md
+experiments/
