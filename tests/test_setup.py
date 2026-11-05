@@ -17,7 +17,7 @@ ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.de
        "XDG_CONFIG_HOME": os.devnull}
 
 INSTALL = {
-    "claude": "plugin install superpowers --marketplace anthropics/claude-plugins-official",
+    "claude": "plugin install superpowers --marketplace anthropics/claude-plugins-official --scope project",
     "codex": "plugin add superpowers@openai-curated-remote",
     "agy": "plugin install https://github.com/obra/superpowers",
 }
@@ -295,7 +295,20 @@ def test_installs_superpowers_for_each_agent(repo, bin_dir):
         fake_agent(bin_dir, name)
     assert run_setup(repo, bin_dir).returncode == 0
     for name, command in INSTALL.items():
-        assert calls(bin_dir, name) == ["plugin list", command]
+        listed = [] if name == "claude" else ["plugin list"]
+        assert calls(bin_dir, name) == [*listed, command]
+
+
+def test_claude_installs_at_project_scope_from_the_repo_root(repo, bin_dir):
+    """`claude plugin list`는 다른 프로젝트의 설치도 보여 주므로 확인 없이 설치한다. 이미 있으면 그대로 성공한다."""
+    fake_agent(bin_dir, "claude", listed=INSTALLED)
+    (bin_dir / "claude").write_text((bin_dir / "claude").read_text().replace(
+        'echo "$*"', 'pwd >> "{}/claude.pwd"; echo "$*"'.format(bin_dir), 1))
+    sub = repo / "docs"
+    result = subprocess.run([sys.executable, str(repo / ".harness/setup.py")], cwd=sub, capture_output=True,
+                            text=True, env={**ENV, "PATH": f"{bin_dir}{os.pathsep}{GIT_DIR}"})
+    assert calls(bin_dir, "claude") == [INSTALL["claude"]] and result.returncode == 0
+    assert Path((bin_dir / "claude.pwd").read_text().strip()).resolve() == repo.resolve()
 
 
 def test_not_installed_row_still_installs(repo, bin_dir):
@@ -312,10 +325,10 @@ def test_installed_plugin_is_skipped(repo, bin_dir):
 
 def test_rerun_on_configured_clone_changes_nothing(repo, bin_dir):
     git(repo, "config", "core.hooksPath", ".githooks")
-    fake_agent(bin_dir, "claude", listed=INSTALLED)
+    fake_agent(bin_dir, "codex", listed=INSTALLED)
     assert run_setup(repo, bin_dir).returncode == 0
     assert hooks_path(repo) == ".githooks"
-    assert calls(bin_dir, "claude") == ["plugin list"]
+    assert calls(bin_dir, "codex") == ["plugin list"]
 
 
 def test_failed_install_continues_and_reports(repo, bin_dir):

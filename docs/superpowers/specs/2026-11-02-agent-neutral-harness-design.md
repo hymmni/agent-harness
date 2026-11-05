@@ -80,14 +80,14 @@
 ### 환경 설정
 - `.harness/setup.py`를 clone마다 한 번 실행한다. 여러 번 실행해도 결과가 같다.
   - `core.hooksPath`를 `.githooks`로 설정한다. 이미 다른 값이 있거나 `.git/hooks`에 사용자 hook이 있으면 바꾸지 않고 경고한다.
-  - 설치된 에이전트만 골라 `superpowers`를 사용자 범위로 설치한다. 이미 있으면 건너뛴다.
+  - 설치된 에이전트만 골라 `superpowers`를 설치한다. Claude Code는 project 범위(`.claude/settings.json`의 `enabledPlugins`, 내려받기는 clone마다), Codex와 Antigravity는 project 범위를 지원하지 않아 사용자 범위다. Codex와 Antigravity는 이미 있으면 건너뛴다. (2026-11-05 변경)
   - 자동화할 수 없는 신뢰 승인(Claude Code 폴더, Codex `/hooks`)을 안내한다.
 - 설치가 실패해도 나머지를 계속 진행하고, 실패한 명령을 출력한 뒤 exit 1로 끝난다.
 - 플러그인 설치는 사용자 전역 설정을 바꾸므로, 에이전트가 실행할 때는 사용자에게 먼저 묻는다.
 
 | 도구 | 설치 명령 |
 |---|---|
-| Claude Code | `claude plugin install superpowers --marketplace anthropics/claude-plugins-official` |
+| Claude Code | `claude plugin install superpowers --marketplace anthropics/claude-plugins-official --scope project` |
 | Codex | `codex plugin add superpowers@openai-curated-remote` |
 | Antigravity | `agy plugin install https://github.com/obra/superpowers` |
 
