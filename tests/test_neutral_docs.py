@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml   # copier가 함께 설치한다
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -41,10 +42,25 @@ def test_shared_file_names_no_agent(rel):
     "feat|fix|hotfix|refactor|docs|chore", "scratch/",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
-    "main_via_pr", "docs/RESEARCH.md",
+    "main_via_pr", "docs/RESEARCH.md", "_src_path", "gh issue create -R", "--label bug",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+ISSUE_FORMS = sorted((ROOT / ".github/ISSUE_TEMPLATE").glob("*.yml"))
+
+
+def test_template_repo_has_bug_and_improvement_forms():
+    assert [path.stem for path in ISSUE_FORMS] == ["bug", "improvement"]
+
+
+@pytest.mark.parametrize("path", ISSUE_FORMS, ids=lambda path: path.stem)
+def test_issue_form_warns_that_the_repo_is_public(path):
+    form = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert form["name"] and form["description"] and form["labels"] in (["bug"], ["enhancement"])
+    assert form["body"][0]["type"] == "markdown" and "public" in form["body"][0]["attributes"]["value"]
+    assert any(item.get("validations", {}).get("required") for item in form["body"])
 
 
 @pytest.mark.parametrize("text", ["experiments/", "LOG_TEMPLATE", "ENVIRONMENT.md", "personal"])
