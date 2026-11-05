@@ -22,7 +22,7 @@ python3 .harness/setup.py
   | 질문 | 기본값 | 고르면 |
   |---|---|---|
   | `research` | 아니오 | `docs/RESEARCH.md`, `.harness/LOG_TEMPLATE.md`, `docs/private/ENVIRONMENT.md`를 설치하고, `.gitignore`에 `experiments/`와 대용량 파일(`*.pth`, `*.ckpt`, `wandb/` 등)을 추가합니다. |
-  | `main_via_pr` | 예 | 예: main 반영은 PR로만 하고, hook이 main 커밋·병합·push를 막습니다. 아니오: 사람이 로컬에서 main에 병합하고 push하며, hook은 main을 막지 않습니다. |
+  | `main_via_pr` | 예 | 예: main 반영은 PR로만 하고, hook이 main 커밋·병합·push를 막습니다. release-please가 릴리즈 PR을 엽니다. 아니오: 사람이 로컬에서 main에 병합하고 push하며, hook은 main을 막지 않습니다. 버전 태그는 사람이 직접 답니다. |
   | `with_docker` | 아니오 | Docker 개발 환경 스캐폴드를 설치합니다. |
 
 - 이미 있는 파일과 겹치면 copier가 덮어쓸지 묻습니다. 덮어쓰지 않은 파일(예: 기존 `AGENTS.md`)에는 하네스 내용을 직접 병합합니다. 이 질문에 답할 터미널이 없으면 copier가 중간에 멈춰 일부 파일만 복사되므로, 터미널에서 직접 실행합니다.
@@ -107,10 +107,17 @@ Docker 스캐폴드를 고르면 `DOCKER.md`, `docker-compose*.yml`, `docker/`, 
 
 ## 브랜치와 릴리즈
 
-`main`과 `feat|fix|hotfix|refactor|docs|chore/<주제>` 브랜치만 쓰고, 릴리즈는 main의 `vX.Y.Z` 태그와 GitHub Release로 나눕니다. main 반영 방식은 설치 때 고른 `main_via_pr`를 따릅니다. 자세한 규칙은 `AGENTS.md`를 참고하십시오.
+GitHub Flow를 따릅니다. `main`과 `feat|fix|refactor|docs|chore/<주제>` 브랜치만 쓰고, 브랜치에 main을 병합해 테스트한 뒤 main에 합칩니다. 그래서 main은 언제든 태그를 달 수 있습니다. 사람들에게 새 버전으로 올리라고 알릴 때만 main에 `vX.Y.Z` 태그를 답니다. 옛 버전을 따로 고치는 브랜치는 두지 않습니다. main 반영 방식은 설치 때 고른 `main_via_pr`를 따릅니다. 자세한 규칙은 `AGENTS.md`를 참고하십시오.
 
-- **`main_via_pr: true`**: 에이전트가 PR을 만들고 사람이 웹에서 일반 병합합니다. hook이 main 커밋·병합·push를 막습니다.
-- **`main_via_pr: false`**: 사람이 로컬에서 main에 병합하고 push합니다. hook은 main을 막지 않습니다.
+- **`main_via_pr: true`**: 에이전트가 PR을 만들고 사람이 웹에서 일반 병합합니다. hook이 main 커밋·병합·push를 막습니다. 병합할 때마다 release-please가 릴리즈 PR을 열거나 갱신하고, 릴리즈 PR을 병합하면 태그와 GitHub Release가 생깁니다.
+- **`main_via_pr: false`**: 사람이 로컬에서 `git merge --no-ff <브랜치>`로 main에 병합하고 push합니다. hook은 main을 막지 않습니다. 새 버전은 사람이 버전 표기를 고쳐 main에 반영하고 `git tag -a vX.Y.Z -m "<바뀐 점>"`으로 태그를 달아 push합니다. GitHub Release는 필요할 때만 만듭니다.
+
+`main_via_pr: true`로 설치하면 `.github/`에 릴리즈 PR 워크플로와 설정이 생깁니다.
+
+- 레포 관리자가 Settings → Actions → General에서 "Allow GitHub Actions to create and approve pull requests"를 켜야 릴리즈 PR이 열립니다. 조직 레포는 조직 설정에서 먼저 허용해야 할 수 있습니다.
+- 첫 릴리즈는 `0.1.0`입니다. 이미 버전을 쓰던 레포라면 `.github/.release-please-manifest.json`의 `"0.0.0"`을 현재 버전으로 바꿉니다.
+- 버전은 커밋 타입으로 정합니다. 제목에 `!`가 있으면 major, `feat`가 있으면 minor, 그 밖에는 patch를 올립니다. 1.0.0 전에는 `!`도 minor만 올립니다. 1.0.0으로 올릴 때는 커밋 본문에 `Release-As: 1.0.0` 줄을 넣습니다. 릴리즈 노트는 병합된 PR 목록이라 `chore`만 병합돼도 릴리즈 PR이 열릴 수 있습니다. 내보낼지는 릴리즈 PR을 병합할지로 정합니다.
+- Python 프로젝트는 `.github/release-please-config.json`의 `"release-type"`을 `"python"`으로 바꾸면 `pyproject.toml`의 버전도 함께 올립니다. 이 수정은 `copier update` 뒤에도 남습니다.
 
 두 방식 모두 에이전트는 main에 커밋·병합·push하지 않습니다. git hook은 사람과 에이전트를 구분하지 못하므로, 에이전트의 명령에만 걸리는 위험 명령 차단 스크립트가 이런 명령을 막습니다. 필요하면 사람이 터미널에서 직접 실행합니다. 차단 스크립트는 명령 문자열을 순서대로 따라가며 `cd`, `git -C`, 브랜치 전환을 반영해 대상 레포의 브랜치를 판단합니다. 스크립트를 거쳐 실행하거나, 서브셸 안에서 `cd`하거나, 변수로 만든 경로는 못 따라갑니다.
 
@@ -134,7 +141,7 @@ hook 파일은 브랜치마다 따라다니므로, 도입 전에 갈라진 브�
 
 ## 템플릿 개발
 
-레포 루트가 copier 템플릿입니다. `copier.yml`의 `_exclude`에 있는 README, `tests/`, `docs/superpowers/`, `.github/` 같은 템플릿 개발용 파일은 프로젝트로 복사되지 않습니다. 루트에 새 파일을 추가하면 `tests/test_copier.py`가 실패하니, 복사할지 `_exclude`에 넣을지 정합니다. 이름에 `{% if with_docker %}`나 `{% if research %}`가 붙은 파일과 폴더는 그 질문에 "예"라고 답했을 때만 만들어집니다. 템플릿 레포 자신에는 `.copier-answers.yml`이 없어 `research=false`, `main_via_pr=true`로 동작합니다.
+레포 루트가 copier 템플릿입니다. `copier.yml`의 `_exclude`에 있는 README, `tests/`, `docs/superpowers/`, `.github/`의 이슈 양식과 릴리즈 설정 같은 템플릿 개발용 파일은 프로젝트로 복사되지 않습니다. 루트에 새 파일을 추가하면 `tests/test_copier.py`가 실패하니, 복사할지 `_exclude`에 넣을지 정합니다. 이름에 `{% if with_docker %}`, `{% if research %}`, `{% if main_via_pr %}`가 붙은 파일과 폴더는 그 질문에 "예"라고 답했을 때만 만들어집니다. 템플릿 레포 자신에는 `.copier-answers.yml`이 없어 `research=false`, `main_via_pr=true`로 동작합니다.
 
 테스트에는 copier와 pytest가 필요합니다.
 
@@ -145,8 +152,7 @@ python3 -m pytest -q tests
 
 템플릿 릴리즈는 [release-please](https://github.com/googleapis/release-please)가 관리합니다. PR이 main에 병합되면 GitHub Actions가 릴리즈 PR을 열거나 갱신합니다. 릴리즈 PR에는 다음 버전과 `CHANGELOG.md`가 들어 있고, 이것을 병합하면 `vX.Y.Z` 태그와 GitHub Release가 만들어집니다. 각 프로젝트는 `copier update`로 그 버전을 받습니다.
 
-- 버전은 커밋 타입으로 정합니다. 제목에 `!`가 있으면 major, `feat`가 있으면 minor, 그 밖에는 patch를 올립니다. 릴리즈 노트는 병합된 PR 목록입니다. 병합 커밋 본문에 PR 제목이 들어가 커밋 기준으로 쓰면 항목이 두 번씩 나오기 때문입니다.
-- `chore`만 병합돼도 릴리즈 PR이 열릴 수 있습니다. 릴리즈할지는 릴리즈 PR을 병합하는 사람이 정합니다.
+- 버전과 릴리즈 노트 규칙은 "브랜치와 릴리즈"의 `main_via_pr: true` 프로젝트와 같습니다. 릴리즈 노트를 커밋이 아니라 병합된 PR로 만드는 이유는, 병합 커밋 본문에 PR 제목이 들어가 커밋 기준이면 항목이 두 번씩 나오기 때문입니다.
 - 여러 PR을 모았다가 릴리즈 PR 하나로 내보낼 수 있습니다. 릴리즈 PR이 열려 있으면 아직 프로젝트에 나가지 않은 변경이 있다는 뜻입니다.
 - 태그를 손으로 달지 않습니다. `version.txt`와 `.release-please-manifest.json`은 release-please가 고칩니다.
 

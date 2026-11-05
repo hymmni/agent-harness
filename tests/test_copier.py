@@ -16,7 +16,7 @@ ENV = {
 }
 HARNESS_TOP = {
     ".agents", ".claude", ".codex", ".githooks", ".harness", "AGENTS.md", "CLAUDE.md", "docs",
-    ".copier-answers.yml",
+    ".copier-answers.yml", ".github",
 }
 DOCKER_TOP = {
     "DOCKER.md", "docker-compose.yml", "docker-compose.gpu.yml", ".env.example", "requirements.txt",
@@ -24,6 +24,8 @@ DOCKER_TOP = {
 }
 HOOK_NAMES = ("pre-commit", "pre-merge-commit", "commit-msg", "pre-push")
 RESEARCH_FILES = ("docs/RESEARCH.md", ".harness/LOG_TEMPLATE.md", "docs/private/ENVIRONMENT.md")
+RELEASE_FILES = (".github/workflows/release.yml", ".github/release-please-config.json",
+                 ".github/.release-please-manifest.json")
 
 
 def git(repo, *args):
@@ -94,6 +96,21 @@ def test_research_files_need_research(template, project):
 def test_research_installs_research_files(template, project):
     assert install(template, project, "research=true").returncode == 0
     assert [rel for rel in RESEARCH_FILES if not (project / rel).is_file()] == []
+
+
+def test_pr_mode_gets_only_the_release_pr_workflow(template, project):
+    """템플릿 자신의 이슈 양식과 릴리즈 설정은 가져가지 않는다."""
+    install(template, project)
+    assert {str(path.relative_to(project)) for path in (project / ".github").rglob("*")} == {
+        ".github/workflows", *RELEASE_FILES}
+    workflow = (project / RELEASE_FILES[0]).read_text(encoding="utf-8")
+    assert all(f": {rel}\n" in workflow for rel in RELEASE_FILES[1:])
+    assert json.loads((project / RELEASE_FILES[2]).read_text(encoding="utf-8")) == {".": "0.0.0"}
+
+
+def test_direct_mode_has_no_release_pr(template, project):
+    assert install(template, project, "main_via_pr=false").returncode == 0
+    assert ".github" not in top_names(project)
 
 
 def test_answers_are_one_line_each_for_hooks(template, project):
