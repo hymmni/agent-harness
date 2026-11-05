@@ -143,6 +143,10 @@ python3 -m pip install copier pytest
 python3 -m pytest -q tests
 ```
 
-템플릿 변경을 프로젝트에 배포하려면 main에 `vX.Y.Z` 태그를 답니다. 각 프로젝트는 `copier update`로 그 버전을 받습니다.
+템플릿 릴리즈는 [release-please](https://github.com/googleapis/release-please)가 관리합니다. PR이 main에 병합되면 GitHub Actions가 릴리즈 PR을 열거나 갱신합니다. 릴리즈 PR에는 다음 버전과 `CHANGELOG.md`가 들어 있고, 이것을 병합하면 `vX.Y.Z` 태그와 GitHub Release가 만들어집니다. 각 프로젝트는 `copier update`로 그 버전을 받습니다.
+
+- 버전은 커밋 타입으로 정합니다. `feat`는 minor, `fix`, `hotfix`, `docs`, `refactor`는 patch, 제목에 `!`가 있으면 major를 올립니다. `docs`도 올리는 이유는 규칙 문서가 프로젝트 에이전트의 동작을 바꾸기 때문입니다. `chore`, `test`, `wip`만 있으면 릴리즈하지 않습니다.
+- 여러 PR을 모았다가 릴리즈 PR 하나로 내보낼 수 있습니다. 릴리즈 PR이 열려 있으면 아직 프로젝트에 나가지 않은 변경이 있다는 뜻입니다.
+- 태그를 손으로 달지 않습니다. `version.txt`와 `.release-please-manifest.json`은 release-please가 고칩니다.
 
 커밋하지 않은 변경이 있는 로컬 작업본으로 설치하면 copier가 임시 커밋 번호를 기록해, 그 프로젝트는 나중에 `copier update`를 할 수 없습니다. 실제 설치는 `gh:` 주소로 합니다.
