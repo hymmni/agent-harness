@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 (2026-11-05)
+
+## What's Changed
+* docs(harness): say where infrastructure notes go by @hymmni in https://github.com/hymmni/agent-harness/pull/18
+
+
+**Full Changelog**: https://github.com/hymmni/agent-harness/compare/v0.2.1...v0.2.2
+
 ## 0.2.1 (2026-11-05)
 
 ## What's Changed
