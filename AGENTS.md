@@ -2,10 +2,10 @@
 
 ## 🚀 세션 시작 체크리스트
 새 세션을 시작할 때 반드시 수행하라:
-1. `README.md`를 읽고 프로젝트 구조와 적용 방법을 파악한다.
+1. `README.md`를 읽고 프로젝트 구조를 파악한다.
 2. 가상환경이 있는지 확인한다(`venv/`, `.venv/`, `conda` 환경 등). 있으면 해당 환경에서 작업한다.
    - conda: `conda activate <env>` / venv: `source venv/bin/activate`
-3. `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/private/ENVIRONMENT.md`를 읽고 현재 구조·결정 이력·하드웨어 구성을 파악한다.
+3. `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/private/ENVIRONMENT.md`를 읽고 현재 구조·결정 이력·하드웨어 구성을 파악한다. `docs/private/ENVIRONMENT.md`가 없으면 사용자에게 하드웨어 구성을 물어 만든다. 이 파일은 git으로 전달되지 않는다.
 4. `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 .harness/setup.py`를 실행한다.
 5. 현재 브랜치의 플랜(`docs/superpowers/plans/`)이 있으면 체크되지 않은 task부터 이어 간다.
 6. `continuation_plan.md`가 있으면 읽고 이전 세션의 중단 지점부터 이어서 시작한다.
@@ -27,7 +27,7 @@
 - **기본 워크플로우 — 직접 세션 협업**: 새 설계나 구현 방향은 먼저 사용자와 논의해 확정한 뒤 진행한다. 작업 도중 설계 판단이 필요한 지점(접근 방식 선택, 시도가 실패했을 때의 다음 방향, 결과 해석)마다 먼저 확인받고, 사용자 모르게 재설계하지 않는다. 결과가 기대와 다르게 나오면 "안 됐다"로 뭉개지 말고, 무엇을 어떻게 시도했고 왜 그렇게 판단했는지 구체적으로 보고해 사용자가 직접 검증할 수 있게 한다.
 - **상세 워크플로우**: 설계·플랜·실행 절차는 `harness` 스킬(`.agents/skills/harness/SKILL.md`)을 따른다.
 - **큰 작업 시작 전**: 여러 task짜리 큰 작업을 시작하기 전에 대략적인 토큰 소모 규모(작음/보통/큼)를 사용자에게 알린다. 필요하면 각 에이전트의 공식 수단으로 사용량을 확인해 근거로 제시한다.
-- **Commit Message**: Scoped Conventional Commits 사용. **커밋 메시지(제목·본문)는 영어로 작성**한다. 괄호 안에 수정된 모듈 영역(`policy`, `env`, `data`, `config`, `harness` 등 베이스라인 이름이나 모듈)을 명시하고, **제목은 명사형이 아닌 서술형(동사 중심 문장)으로** 작성하며, **반드시 본문에 글머리기호(`-`)를 사용한 멀티라인 상세 설명을 추가**하라. 예시:
+- **Commit Message**: Scoped Conventional Commits 사용. 타입은 `feat|fix|hotfix|refactor|docs|chore|test|wip`만 쓴다. **커밋 메시지(제목·본문)는 영어로 작성**한다. 괄호 안에 수정된 모듈 영역(`policy`, `env`, `data`, `config`, `harness` 등 베이스라인 이름이나 모듈)을 명시하고, **제목은 명사형이 아닌 서술형(동사 중심 문장)으로** 작성하며, **반드시 본문에 글머리기호(`-`)를 사용한 멀티라인 상세 설명을 추가**하라. 예시:
   ```
   feat(policy): add diffusion head to transformer backbone
 
@@ -64,4 +64,5 @@
 | **단순 작업** | 단순 수정, 문서 작성, 빠른 조회성 작업 |
 
 ## 🛠️ 유틸리티 명령어
-- `python3 .harness/setup.py` # clone마다 한 번 실행: git hook 연결, 설치된 에이전트에 `superpowers` 설치
+- `python3 .harness/setup.py` # clone마다 한 번 실행: git hook 연결, `.gitignore` 블록과 공유 파일 검사, 설치된 에이전트에 `superpowers` 설치
+- `copier update --defaults` # 하네스 갱신. `--defaults`는 이전 답변을 그대로 쓴다. 없으면 터미널이 없는 에이전트 셸에서 실패한다. 사용자 동의를 받아 브랜치에서 실행하고, 이어서 `python3 .harness/setup.py`를 실행한 뒤 충돌 표시를 해결한다

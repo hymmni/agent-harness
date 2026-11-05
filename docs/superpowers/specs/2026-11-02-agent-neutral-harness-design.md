@@ -14,7 +14,7 @@
 
 ## 비목표
 - GitHub 브랜치 보호, 룰셋, 필수 리뷰 설정
-- `manipulation_pipeline`의 Docker 전환, GUI 패치, 하네스 설치 (이 설계가 끝난 뒤 별도 프로젝트)
+- 실제 연구 프로젝트의 Docker 전환, GUI 패치, 하네스 설치 (이 설계가 끝난 뒤 별도 프로젝트)
 - 평가 항목 중 검증 루프(`Verify:`), SessionStart hook
 - Codex·Antigravity에서의 `references/` 쓰기 강제
 
@@ -139,12 +139,22 @@
 - 에이전트가 git hook을 통과하는 브랜치와 커밋을 만드는가
 
 ## 2026-11-03 변경
-독립 검토와 `manipulation_pipeline` 확인 뒤 다음을 바꿨다. 위 내용과 다르면 이 절이 우선한다.
+독립 검토와 실제 대상 프로젝트 확인 뒤 다음을 바꿨다. 위 내용과 다르면 이 절이 우선한다.
 
 - 실험은 `feat/*`의 커밋이 아니라 개인 fork에서 한다. 첫 적용 대상의 `CONTRIBUTING.md`가 fork 방식이기 때문이다. `experiments/`는 git에서 제외하고, 양식은 새 clone에도 전달되도록 `.harness/LOG_TEMPLATE.md`로 옮겼다.
 - `pre-push`는 원격 이름이 `personal`일 때만 main push를 허용한다. `origin`만 막으면 공유 레포를 `upstream`으로 둔 clone에서 차단이 조용히 사라지므로, 예외를 하나만 두는 쪽을 택했다.
 - `.gitignore` 충돌 검사는 `setup.py`에 둔다. 설치 직후와 새 clone 양쪽에서 같은 검사가 돌아야 하기 때문이다.
 - 도입 전 브랜치의 hook 공백은 `.git/hooks` 연결 파일로 막지 않고 문서로 남긴다. 연결 파일은 main을 병합하지 않은 fork 실험 브랜치의 커밋까지 막아 "fork 안에서는 제약 없이"라는 약속과 충돌한다. main에 체크아웃한 동안의 보호는 그대로이고, 공백은 그런 브랜치에서 동작할 때로 한정된다.
+
+### 설치 방식: copier
+이미 설치한 프로젝트에 템플릿 갱신을 반영할 수 있도록 `install.py`를 지우고 copier로 바꿨다.
+
+- 레포 루트가 템플릿이다. 템플릿 레포 자신도 같은 하네스로 개발하므로 하위 폴더로 옮기지 않았다. 템플릿 개발용 파일은 `_exclude`로 빼고, 루트 목록 테스트로 새 파일의 유출을 막는다.
+- 프로젝트가 채워 쓰는 `docs/ADR.md`, `docs/ARCHITECTURE.md`, `docs/private/ENVIRONMENT.md`는 `_skip_if_exists`로 갱신하지 않는다.
+- copier는 기존 `.gitignore`에 덧붙이지 못하므로 관리 블록은 `setup.py`가 맞춘다. copier 작업(`_tasks`)은 `--trust`가 필요해 쓰지 않았다.
+- Docker 스캐폴드는 `with_docker` 질문과 조건부 파일 이름으로 고른다.
+- 갱신의 충돌 표시가 커밋되지 않도록 `pre-commit`이 막는다.
+- 기존 `*.harness.md` 병합 안내는 copier의 덮어쓰기 확인으로 대신한다.
 
 ## 구현자에게 맡기는 것
 - 파일 내부 구조, 함수 이름, 커밋 분할

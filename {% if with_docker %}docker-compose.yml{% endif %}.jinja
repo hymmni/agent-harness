@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: __PROJECT_NAME__/dev:latest
+    image: {{ project_slug }}/dev:latest
     working_dir: /workspace
     volumes:
       - .:/workspace

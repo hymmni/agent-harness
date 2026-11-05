@@ -1,5 +1,10 @@
 #!/bin/sh
-# main 직접 커밋과 규칙에 맞지 않는 브랜치 이름을 막는다.
+# 충돌 표시가 남은 커밋, main 직접 커밋, 규칙에 맞지 않는 브랜치 이름을 막는다.
+if git diff --cached -U0 | grep -qE '^\+(<<<<<<<|>>>>>>>)( |$)'; then
+  echo "BLOCKED: 충돌 표시(<<<<<<< 또는 >>>>>>>)가 남아 있습니다. 해결한 뒤 커밋하세요." >&2
+  exit 1
+fi
+
 git rev-parse -q --verify HEAD >/dev/null || exit 0     # 레포의 첫 커밋
 branch=$(git symbolic-ref -q --short HEAD) || exit 0    # detached HEAD
 
