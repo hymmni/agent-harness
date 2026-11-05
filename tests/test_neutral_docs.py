@@ -39,7 +39,7 @@ def test_shared_file_names_no_agent(rel):
 
 
 @pytest.mark.parametrize("text", [
-    "feat|fix|refactor|docs|chore", "scratch/", "git merge --no-ff", "git tag -a", "release-please", "1.0.0 전에는",
+    "feat|fix|refactor|docs|chore", "scratch/", "git merge --no-ff", "git tag -a", "release-please", "1.0.0 전에는", "자리표시",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
     "main_via_pr", "docs/RESEARCH.md", "_src_path", "gh issue create -R", "--label bug",
@@ -47,6 +47,12 @@ def test_shared_file_names_no_agent(rel):
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("rel", ["docs/ARCHITECTURE.md", "docs/ADR.md"])
+def test_fill_in_docs_carry_the_placeholder_mark(rel):
+    """AGENTS.md는 이 표시로 아직 채우지 않은 문서를 알아본다."""
+    assert "자리표시" in (ROOT / rel).read_text(encoding="utf-8")
 
 
 ISSUE_FORMS = sorted((ROOT / ".github/ISSUE_TEMPLATE").glob("*.yml"))
