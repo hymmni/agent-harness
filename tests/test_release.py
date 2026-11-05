@@ -2,20 +2,13 @@
 import json
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def sections():
+def test_release_notes_list_merged_pull_requests():
+    """병합 커밋 본문에 PR 제목이 들어가 커밋 기반 목록은 항목이 두 번씩 나온다."""
     config = json.loads((ROOT / "release-please-config.json").read_text(encoding="utf-8"))
-    return {section["type"]: section for section in config["packages"]["."]["changelog-sections"]}
-
-
-@pytest.mark.parametrize("kind", ["feat", "fix", "hotfix", "docs", "refactor"])
-def test_harness_changes_reach_a_release(kind):
-    """규칙 문서(docs)도 프로젝트 동작을 바꾸므로 릴리즈 대상이다."""
-    assert not sections()[kind].get("hidden", False)
+    assert config["changelog-type"] == "github"
 
 
 def test_version_file_matches_manifest():

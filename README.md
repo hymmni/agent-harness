@@ -145,7 +145,8 @@ python3 -m pytest -q tests
 
 템플릿 릴리즈는 [release-please](https://github.com/googleapis/release-please)가 관리합니다. PR이 main에 병합되면 GitHub Actions가 릴리즈 PR을 열거나 갱신합니다. 릴리즈 PR에는 다음 버전과 `CHANGELOG.md`가 들어 있고, 이것을 병합하면 `vX.Y.Z` 태그와 GitHub Release가 만들어집니다. 각 프로젝트는 `copier update`로 그 버전을 받습니다.
 
-- 버전은 커밋 타입으로 정합니다. `feat`는 minor, `fix`, `hotfix`, `docs`, `refactor`는 patch, 제목에 `!`가 있으면 major를 올립니다. `docs`도 올리는 이유는 규칙 문서가 프로젝트 에이전트의 동작을 바꾸기 때문입니다. `chore`, `test`, `wip`만 있으면 릴리즈하지 않습니다.
+- 버전은 커밋 타입으로 정합니다. 제목에 `!`가 있으면 major, `feat`가 있으면 minor, 그 밖에는 patch를 올립니다. 릴리즈 노트는 병합된 PR 목록입니다. 병합 커밋 본문에 PR 제목이 들어가 커밋 기준으로 쓰면 항목이 두 번씩 나오기 때문입니다.
+- `chore`만 병합돼도 릴리즈 PR이 열릴 수 있습니다. 릴리즈할지는 릴리즈 PR을 병합하는 사람이 정합니다.
 - 여러 PR을 모았다가 릴리즈 PR 하나로 내보낼 수 있습니다. 릴리즈 PR이 열려 있으면 아직 프로젝트에 나가지 않은 변경이 있다는 뜻입니다.
 - 태그를 손으로 달지 않습니다. `version.txt`와 `.release-please-manifest.json`은 release-please가 고칩니다.
 
