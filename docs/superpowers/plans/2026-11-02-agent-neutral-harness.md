@@ -24,7 +24,7 @@
 
 ## Review Focus
 
-1. 대상 프로젝트의 기존 `.gitignore`가 `experiments/`를 제외하는 경우(`manipulation_pipeline`이 그렇다): 설치가 경고한다. Task 7이 테스트한다.
+1. 대상 프로젝트의 기존 `.gitignore`가 `experiments/`를 제외하는 경우: 설치가 경고한다. Task 7이 테스트한다.
 2. 대상 프로젝트에 `AGENTS.md` 없이 `CLAUDE.md`만 있는 경우: 기존 파일을 보존하고 `@AGENTS.md` 추가를 안내한다. Task 7이 테스트한다.
 3. 대상 프로젝트에 다른 `core.hooksPath`나 `.git/hooks` 사용자 hook이 있는 경우: 덮어쓰지 않고 경고한다. Task 6이 테스트한다.
 4. 설정이 끝난 clone에서 `setup.py`를 다시 실행하는 경우: 값을 바꾸지 않고 설치 명령도 실행하지 않는다. Task 6이 테스트한다.

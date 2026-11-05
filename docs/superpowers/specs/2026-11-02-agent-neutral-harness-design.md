@@ -14,7 +14,7 @@
 
 ## 비목표
 - GitHub 브랜치 보호, 룰셋, 필수 리뷰 설정
-- `manipulation_pipeline`의 Docker 전환, GUI 패치, 하네스 설치 (이 설계가 끝난 뒤 별도 프로젝트)
+- 실제 연구 프로젝트의 Docker 전환, GUI 패치, 하네스 설치 (이 설계가 끝난 뒤 별도 프로젝트)
 - 평가 항목 중 검증 루프(`Verify:`), SessionStart hook
 - Codex·Antigravity에서의 `references/` 쓰기 강제
 
@@ -139,7 +139,7 @@
 - 에이전트가 git hook을 통과하는 브랜치와 커밋을 만드는가
 
 ## 2026-11-03 변경
-독립 검토와 `manipulation_pipeline` 확인 뒤 다음을 바꿨다. 위 내용과 다르면 이 절이 우선한다.
+독립 검토와 실제 대상 프로젝트 확인 뒤 다음을 바꿨다. 위 내용과 다르면 이 절이 우선한다.
 
 - 실험은 `feat/*`의 커밋이 아니라 개인 fork에서 한다. 첫 적용 대상의 `CONTRIBUTING.md`가 fork 방식이기 때문이다. `experiments/`는 git에서 제외하고, 양식은 새 clone에도 전달되도록 `.harness/LOG_TEMPLATE.md`로 옮겼다.
 - `pre-push`는 원격 이름이 `personal`일 때만 main push를 허용한다. `origin`만 막으면 공유 레포를 `upstream`으로 둔 clone에서 차단이 조용히 사라지므로, 예외를 하나만 두는 쪽을 택했다.
