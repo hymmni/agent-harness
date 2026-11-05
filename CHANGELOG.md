@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (2026-11-05)
+
+## What's Changed
+* feat(harness): follow GitHub Flow, open release PRs in PR-mode projects, restart at 0.1.x by @hymmni in https://github.com/hymmni/agent-harness/pull/13
+
+
+**Full Changelog**: https://github.com/hymmni/agent-harness/compare/v0.1.1...v0.2.0
+
 ## 0.1.1 (2026-11-05)
 
 ## What's Changed
