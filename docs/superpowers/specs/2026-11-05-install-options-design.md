@@ -63,7 +63,8 @@
 ### git hook
 - `pre-commit`: 브랜치가 main이고 `.copier-answers.yml`에 `main_via_pr: false`가 있으면 통과한다. 충돌 표시 검사는 두 방식 모두 한다. `pre-merge-commit`은 `pre-commit`을 그대로 쓴다.
 - `pre-push`: `main_via_pr: false`면 main push 검사를 건너뛴다.
-- `block_dangerous.py`: 바꾸지 않는다. `gh pr merge` 차단은 두 방식 모두 유지한다.
+- `block_dangerous.py`: `gh pr merge` 차단은 두 방식 모두 유지한다.
+- (2026-11-05 변경, "내가 정한 것" 2번을 대체) 에이전트는 두 방식 모두 main에 커밋·병합·push하지 않는다. git hook은 사람과 에이전트를 구분하지 못하므로, 에이전트 명령에만 걸리는 `block_dangerous.py`가 막는다. 판단 기준은 명령 문자열과 payload의 `cwd`(Antigravity는 `Cwd`)에서 읽은 현재 브랜치다. 첫 커밋 전에는 막지 않는다. 사람은 터미널에서 직접 실행한다.
 
 ### 기타
 - `harness` 스킬 E단계: "main 반영은 `AGENTS.md`의 방식을 따른다." A단계의 `ROBOT_GUIDE` 언급을 뺀다.

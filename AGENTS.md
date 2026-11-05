@@ -42,7 +42,8 @@
 - 실패한 시도는 `git revert`한다.
 - main 반영 방식은 `.copier-answers.yml`의 `main_via_pr`를 따른다. 파일이나 값이 없으면 `true`로 본다.
   - `true`: main 반영은 PR로만 한다. 에이전트가 PR을 만들고(`gh`가 없으면 링크 안내) 사람이 웹에서 일반 병합(merge commit)한다. 에이전트는 main에 직접 커밋이나 병합을 하지 않고, 공유 레포의 main에 push하지 않는다.
-  - `false`: 사람이 로컬에서 main에 병합하고 push한다. 에이전트는 사용자가 명시적으로 승인한 경우에만 main에 병합하거나 push한다.
+  - `false`: 사람이 로컬에서 main에 병합하고 push한다. 에이전트는 main에 커밋·병합·push하지 않고, 필요하면 실행할 명령을 사용자에게 알려 사용자가 터미널에서 직접 실행하게 한다.
+  - 두 방식 모두 에이전트가 main에 커밋·병합·push하는 명령은 위험 명령 차단 스크립트가 막는다.
 - push한 브랜치는 rebase하지 않고 main을 병합해 최신화한다. force push는 `--force-with-lease`도 쓰지 않는다.
 - 릴리즈는 main에 `vX.Y.Z` 태그와 GitHub Release로 나눈다. 프로젝트 버전 수정은 태그 전에 main에 반영한다.
 - `hotfix/*`는 배포한 버전만 긴급 수정할 때 쓴다. 해당 태그에서 분기해 수정하고 그 브랜치에 패치 태그를 단 뒤, main 반영 방식대로 main에 합친다. 일반 수정은 `fix/*`를 쓴다.

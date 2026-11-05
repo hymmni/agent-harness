@@ -1,6 +1,7 @@
 """block_dangerous.py 검증 — 실제 훅과 같은 방식(stdin JSON + 종료 코드)으로 실행한다."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -11,7 +12,9 @@ HOOK = Path(__file__).resolve().parent.parent / ".harness/block_dangerous.py"
 
 
 def run_hook(stdin: str) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(HOOK)], input=stdin, capture_output=True, text=True)
+    # git 저장소 밖에서 실행한다. 이 레포가 main에 있을 때 main 검사가 결과를 바꾸지 않게 한다.
+    return subprocess.run([sys.executable, str(HOOK)], input=stdin, capture_output=True, text=True,
+                          cwd=os.path.abspath(os.sep))
 
 
 def run_command(command: str) -> subprocess.CompletedProcess:
@@ -71,9 +74,7 @@ def test_message_names_the_matched_text():
     "rm -f build/out.r",
     "rm -r build",
     "confirm -rf",
-    "git push origin main",
     "git push origin feat/fix-force",
-    "git push origin main && ls -f",
     "git reset --soft HEAD~1",
     "python3 .harness/setup.py",
     "git config core.hooksPath",
@@ -129,3 +130,80 @@ def test_antigravity_denied_with_json():
 def test_antigravity_allowed_prints_nothing():
     result = run_antigravity("git status")
     assert result.returncode == 0 and result.stdout == ""
+
+
+# main 보호: 에이전트는 main에 커밋·병합·push하지 않는다. 사람은 터미널에서 직접 한다.
+GIT_ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x"}
+
+
+def make_repo(path, branch=None, commit=True):
+    path.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main", str(path)], check=True, env=GIT_ENV)
+    if commit:
+        subprocess.run(["git", "-C", str(path), "commit", "-q", "--allow-empty", "-m", "x"], check=True, env=GIT_ENV)
+    if branch:
+        subprocess.run(["git", "-C", str(path), "switch", "-q", "-c", branch], check=True, env=GIT_ENV)
+    return path
+
+
+def run_in(repo, command):
+    return run_hook(json.dumps({"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(repo)}))
+
+
+@pytest.fixture
+def main_repo(tmp_path):
+    return make_repo(tmp_path / "repo")
+
+
+@pytest.fixture
+def feature_repo(tmp_path):
+    return make_repo(tmp_path / "repo", branch="feat/x")
+
+
+@pytest.mark.parametrize("command", [
+    "git commit -m x", 'git commit -am "x"', "git merge feat/x", "git merge --no-ff --no-edit feat/x",
+    "git cherry-pick abc123", "git revert HEAD", "git rebase feat/x", "git am fix.patch",
+    "git push", "git push origin", "git push origin HEAD", "git push -u origin HEAD",
+])
+def test_blocks_changing_main_on_main(main_repo, command):
+    assert_blocked(run_in(main_repo, command))
+
+
+@pytest.mark.parametrize("command", [
+    "git push origin main", "git push origin main && ls -f", "git push origin feat/x:main",
+    "git push origin HEAD:refs/heads/main", "git push --all origin",
+    "git switch main && git merge feat/x", "git checkout main; git commit -m x",
+])
+def test_blocks_changing_main_from_a_feature_branch(feature_repo, command):
+    assert_blocked(run_in(feature_repo, command))
+
+
+@pytest.mark.parametrize("command", [
+    "git commit -m x", "git merge main", "git merge --no-edit origin/main", "git push", "git push -u origin HEAD",
+    "git push origin feat/x", "git push origin feat/main-fix", "git switch main", "git commit-tree HEAD^{tree}",
+])
+def test_allows_feature_branch_work(feature_repo, command):
+    assert run_in(feature_repo, command).returncode == 0
+
+
+@pytest.mark.parametrize("command", [
+    "git pull --ff-only origin main", "git fetch origin main", "git switch -c feat/y", "git log main",
+    "git push origin v1.0.0", "git tag v1.0.0", "git status",
+])
+def test_allows_syncing_and_reading_main(main_repo, command):
+    assert run_in(main_repo, command).returncode == 0
+
+
+def test_first_commit_on_empty_main_is_allowed(tmp_path):
+    assert run_in(make_repo(tmp_path / "repo", commit=False), "git commit -m x").returncode == 0
+
+
+def test_main_block_tells_human_to_run_it(main_repo):
+    assert "터미널" in run_in(main_repo, "git merge feat/x").stderr
+
+
+def test_antigravity_main_block_uses_its_cwd(main_repo):
+    payload = {"toolCall": {"name": "run_command", "args": {"CommandLine": "git commit -m x", "Cwd": str(main_repo)}}}
+    result = run_hook(json.dumps(payload))
+    assert result.returncode == 0 and json.loads(result.stdout)["decision"] == "deny"
