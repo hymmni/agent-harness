@@ -78,6 +78,11 @@ def test_installs_only_harness_files(template, project):
     assert top_names(project) == HARNESS_TOP
 
 
+def test_excludes_only_root_readme(template, project):
+    install(template, project)
+    assert (project / "docs/README.md").is_file()
+
+
 @pytest.mark.parametrize("name", HOOK_NAMES)
 def test_hooks_stay_executable(template, project, name):
     install(template, project)

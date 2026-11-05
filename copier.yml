@@ -3,20 +3,21 @@ _min_copier_version: "9.0"
 
 # 이 레포 루트가 템플릿이다. 아래는 템플릿 개발용이라 프로젝트로 복사하지 않는다.
 # 새 파일을 루트에 추가하면 tests/test_copier.py가 복사 여부를 결정하라고 실패한다.
+# 패턴은 .gitignore 문법이다. 앞에 /가 없으면 하위 폴더의 같은 이름까지 제외된다.
 _exclude:
-  - copier.yml
+  - /copier.yml
+  - /.gitignore
+  - /README.md
+  - /tests
+  - /docs/superpowers
+  - /references
+  - /experiments
+  - /scratch
+  - /.superpowers
   - .git
-  - .gitignore
-  - README.md
-  - tests
-  - docs/superpowers
-  - references
-  - experiments
-  - scratch
   - __pycache__
   - "*.py[co]"
   - .pytest_cache
-  - .superpowers
 
 # 프로젝트가 채워 쓰는 파일은 처음 한 번만 만들고, 갱신할 때 덮어쓰지 않는다.
 _skip_if_exists:

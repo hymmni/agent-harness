@@ -40,10 +40,17 @@ def test_shared_file_names_no_agent(rel):
     "feat|fix|hotfix|refactor|docs|chore", "scratch/", "experiments/<",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert",
-    "personal", ".harness/LOG_TEMPLATE.md", "git add -f", "rebase", "copier update",
+    "personal", ".harness/LOG_TEMPLATE.md", "git add -f", "rebase", "copier update --defaults",
+    "`docs/private/ENVIRONMENT.md`가 없으면",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+def test_agents_md_lists_commit_types_the_hook_allows():
+    hook = (ROOT / ".githooks/commit-msg").read_text(encoding="utf-8")
+    types = re.search(r"\^\(([a-z|]+)\)", hook).group(1)
+    assert f"`{types}`" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
 
 def test_claude_skill_points_to_shared_skill():
