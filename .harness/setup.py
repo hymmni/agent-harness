@@ -48,6 +48,7 @@ COMMON_IGNORES = """\
 /references/
 /scratch/
 /continuation_plan.md
+/.superpowers/
 .env
 """
 RESEARCH_IGNORES = """\

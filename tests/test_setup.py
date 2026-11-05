@@ -35,7 +35,7 @@ def hooks_path(repo):
 
 IGNORED = [
     "docs/private/x", "references/x", "scratch/x", "continuation_plan.md", ".env",
-    ".claude/settings.local.json",
+    ".claude/settings.local.json", ".superpowers/brainstorm/s/state/server-info",
 ]
 RESEARCH_IGNORED = [
     "experiments/feat-x/log.md", "a.pth", "a.pt", "a.ckpt", "a.safetensors", "d.zarr/x", "symlinked.zarr",
