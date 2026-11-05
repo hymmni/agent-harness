@@ -16,8 +16,9 @@ def docker(name):
 COMPOSE = docker("docker-compose.yml") + ".jinja"
 DEVCONTAINER = docker(".devcontainer") + "/devcontainer.json.jinja"
 DOCKERFILE = docker("docker") + "/Dockerfile"
+RESEARCH_DOC = "docs/{% if research %}RESEARCH.md{% endif %}"   # research를 고른 경우에만 설치
 SHARED_FILES = [
-    "AGENTS.md", ".agents/skills/harness/SKILL.md", "docs/ROBOT_GUIDE.md",
+    "AGENTS.md", ".agents/skills/harness/SKILL.md", RESEARCH_DOC, "docs/ARCHITECTURE.md", "docs/ADR.md",
     docker("DOCKER.md"), COMPOSE, DEVCONTAINER, DOCKERFILE,
 ]
 FORBIDDEN = (
@@ -37,14 +38,26 @@ def test_shared_file_names_no_agent(rel):
 
 
 @pytest.mark.parametrize("text", [
-    "feat|fix|hotfix|refactor|docs|chore", "scratch/", "experiments/<",
+    "feat|fix|hotfix|refactor|docs|chore", "scratch/",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
-    "pyproject.toml", ".harness/setup.py", "git revert",
-    "personal", ".harness/LOG_TEMPLATE.md", "git add -f", "rebase", "copier update --defaults",
-    "`docs/private/ENVIRONMENT.md`가 없으면",
+    "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
+    "main_via_pr", "docs/RESEARCH.md",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("text", ["experiments/", "LOG_TEMPLATE", "ENVIRONMENT.md", "personal"])
+def test_agents_md_leaves_research_rules_to_research_doc(text):
+    assert text not in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("text", [
+    "experiments/<", ".harness/LOG_TEMPLATE.md", "git add -f", "personal",
+    "`docs/private/ENVIRONMENT.md`가 없으면", "git checkout vX.Y.Z",
+])
+def test_research_doc_states_rule(text):
+    assert text in (ROOT / RESEARCH_DOC).read_text(encoding="utf-8")
 
 
 def test_agents_md_lists_commit_types_the_hook_allows():

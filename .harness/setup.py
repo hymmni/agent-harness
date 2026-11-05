@@ -5,6 +5,7 @@ clone마다 한 번 실행하는 설정 스크립트. 여러 번 실행해도 �
 1. git hook을 .githooks에 연결한다. git은 이 설정을 clone으로 전달하지 않는다.
 2. .gitignore의 하네스 블록을 최신 내용으로 맞춘다. copier는 기존 파일에 덧붙이지 못해 여기서 한다.
 3. 하네스 공유 파일이 팀원에게 전달되는 상태인지 검사한다.
+   2와 3은 .copier-answers.yml의 research 답을 따른다.
 4. 설치된 에이전트에 필수 플러그인 superpowers를 사용자 범위로 설치한다.
 5. 자동화할 수 없는 승인 단계를 안내한다.
 
@@ -28,21 +29,27 @@ SHARED_FILES = (
     ".claude/settings.json", ".claude/skills/harness/SKILL.md",
     ".codex/hooks.json",
     ".githooks/commit-msg", ".githooks/pre-commit", ".githooks/pre-merge-commit", ".githooks/pre-push",
-    ".harness/LOG_TEMPLATE.md", ".harness/block_dangerous.py", ".harness/setup.py",
-    "docs/ADR.md", "docs/ARCHITECTURE.md", "docs/ROBOT_GUIDE.md",
+    ".harness/block_dangerous.py", ".harness/setup.py",
+    "docs/ADR.md", "docs/ARCHITECTURE.md",
 )
+RESEARCH_FILES = ("docs/RESEARCH.md", ".harness/LOG_TEMPLATE.md")
+# copier 설치 답. 템플릿 레포처럼 답 파일이 없으면 기본값을 쓴다.
+ANSWERS = ".copier-answers.yml"
+DEFAULT_OPTIONS = {"research": False, "main_via_pr": True}
 GITIGNORE_BEGIN = "# >>> harness gitignore (managed) >>>"
 GITIGNORE_END = "# <<< harness gitignore (managed) <<<"
-GITIGNORE_BLOCK = f"""{GITIGNORE_BEGIN}
+COMMON_IGNORES = """\
 /.claude/*
 !/.claude/skills/
 !/.claude/settings.json
 /docs/private/
-/experiments/
 /references/
 /scratch/
 /continuation_plan.md
 .env
+"""
+RESEARCH_IGNORES = """\
+/experiments/
 *.pth
 *.pt
 *.ckpt
@@ -52,7 +59,6 @@ GITIGNORE_BLOCK = f"""{GITIGNORE_BEGIN}
 *.h5
 wandb/
 outputs/
-{GITIGNORE_END}
 """
 COMMAND_TIMEOUT = 300
 SUPERPOWERS = {
@@ -95,29 +101,45 @@ def connect_git_hooks(root: Path) -> tuple[bool, str]:
     return True, f"git hook: {HOOKS_DIR}에 연결했습니다."
 
 
-def gitignore_with_block(text: str) -> str:
-    """하네스 블록이 있으면 최신 내용으로 바꾸고, 없으면 끝에 붙인다. 블록 밖은 그대로 둔다."""
-    block = re.compile(f"{re.escape(GITIGNORE_BEGIN)}.*?{re.escape(GITIGNORE_END)}\n?", re.DOTALL)
-    if block.search(text):
-        return block.sub(lambda _: GITIGNORE_BLOCK, text, count=1)
+def options(root: Path) -> dict[str, bool]:
+    """copier가 기록한 `이름: true|false` 줄을 읽는다. PyYAML 없이 동작해야 한다."""
+    found = dict(DEFAULT_OPTIONS)
+    path = root / ANSWERS
+    if path.is_file():
+        text = path.read_text(encoding="utf-8")
+        for name, value in re.findall(r"^(research|main_via_pr): (true|false)$", text, re.MULTILINE):
+            found[name] = value == "true"
+    return found
+
+
+def gitignore_block(research: bool) -> str:
+    body = COMMON_IGNORES + (RESEARCH_IGNORES if research else "")
+    return f"{GITIGNORE_BEGIN}\n{body}{GITIGNORE_END}\n"
+
+
+def gitignore_with_block(text: str, block: str) -> str:
+    """하네스 블록이 있으면 block으로 바꾸고, 없으면 끝에 붙인다. 블록 밖은 그대로 둔다."""
+    managed = re.compile(f"{re.escape(GITIGNORE_BEGIN)}.*?{re.escape(GITIGNORE_END)}\n?", re.DOTALL)
+    if managed.search(text):
+        return managed.sub(lambda _: block, text, count=1)
     if not text.strip():
-        return GITIGNORE_BLOCK
-    return text.rstrip("\n") + "\n\n" + GITIGNORE_BLOCK
+        return block
+    return text.rstrip("\n") + "\n\n" + block
 
 
-def update_gitignore(root: Path) -> str | None:
+def update_gitignore(root: Path, research: bool) -> str | None:
     path = root / ".gitignore"
     text = path.read_text(encoding="utf-8") if path.exists() else ""
-    updated = gitignore_with_block(text)
+    updated = gitignore_with_block(text, gitignore_block(research))
     if updated == text:
         return None
     path.write_text(updated, encoding="utf-8")
     return ".gitignore: 하네스 블록을 최신 내용으로 맞췄습니다. 이 변경도 커밋하세요."
 
 
-def shared_file_problems(root: Path) -> list[str]:
+def shared_file_problems(root: Path, research: bool) -> list[str]:
     problems = []
-    for rel in SHARED_FILES:
+    for rel in SHARED_FILES + (RESEARCH_FILES if research else ()):
         path = root / rel
         if not path.is_file():
             problems.append(f"{rel}: 파일이 없습니다.")
@@ -159,11 +181,12 @@ def main() -> int:
     complete, message = connect_git_hooks(root)
     print(message)
 
-    message = update_gitignore(root)
+    research = options(root)["research"]
+    message = update_gitignore(root, research)
     if message:
         print(message)
 
-    problems = shared_file_problems(root)
+    problems = shared_file_problems(root, research)
     for problem in problems:
         print(f"공유 파일: {problem}")
     complete = complete and not problems

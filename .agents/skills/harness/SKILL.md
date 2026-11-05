@@ -11,7 +11,7 @@ description: 이 프로젝트의 개발 워크플로우. 새 구현 작업을 �
 
 ### A. 탐색
 
-`docs/` 하위 문서(ROBOT_GUIDE, ARCHITECTURE, ADR 등)를 읽고 프로젝트의 아키텍처·설계 의도를 파악한다.
+`docs/` 하위 문서(ARCHITECTURE, ADR, 있으면 RESEARCH 등)를 읽고 프로젝트의 아키텍처·설계 의도를 파악한다.
 
 ### B. 논의
 
@@ -32,8 +32,8 @@ description: 이 프로젝트의 개발 워크플로우. 새 구현 작업을 �
 
 ### E. 병합
 
-main 반영은 PR로만 한다. 에이전트가 PR을 만들고(`gh`가 없으면 링크 안내) 사람이 웹에서
-일반 병합(merge commit)한다. task 커밋은 압축하지 않고 그대로 보존한다.
+main 반영은 `AGENTS.md`의 main 반영 방식(`main_via_pr`)을 따른다. task 커밋은 압축하지 않고
+그대로 보존한다.
 
 ### 세션 정리
 

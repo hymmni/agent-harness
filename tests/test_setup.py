@@ -34,10 +34,14 @@ def hooks_path(repo):
 
 
 IGNORED = [
-    "docs/private/x", "references/x", "scratch/x", "experiments/feat-x/log.md", "continuation_plan.md",
-    "a.pth", "a.pt", "a.ckpt", "a.safetensors", "d.zarr/x", "symlinked.zarr", "a.hdf5", "a.h5",
-    "wandb/x", "outputs/x", ".env", ".claude/settings.local.json",
+    "docs/private/x", "references/x", "scratch/x", "continuation_plan.md", ".env",
+    ".claude/settings.local.json",
 ]
+RESEARCH_IGNORED = [
+    "experiments/feat-x/log.md", "a.pth", "a.pt", "a.ckpt", "a.safetensors", "d.zarr/x", "symlinked.zarr",
+    "a.hdf5", "a.h5", "wandb/x", "outputs/x",
+]
+RESEARCH_FILES = ("docs/RESEARCH.md", ".harness/LOG_TEMPLATE.md")
 TRACKED = [
     ".claude/settings.json", ".claude/skills/harness/SKILL.md", ".copier-answers.yml", "docs/ADR.md",
 ]
@@ -75,6 +79,21 @@ def repo(tmp_path):
     place_shared_files(path)
     git(path, "init", "-q", "-b", "main")
     return path
+
+
+def answer(path, research, main_via_pr=True):
+    (path / ".copier-answers.yml").write_text(
+        f"research: {str(research).lower()}\nmain_via_pr: {str(main_via_pr).lower()}\n")
+
+
+@pytest.fixture
+def research_repo(repo):
+    """research=true로 설치한 프로젝트. setup.py는 연구 파일이 있는지만 본다."""
+    answer(repo, research=True)
+    for rel in RESEARCH_FILES:
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_text("x\n")
+    return repo
 
 
 def fake_agent(bin_dir, name, listed=NOT_INSTALLED, install_exit=0):
@@ -131,6 +150,41 @@ def test_ignores_local_and_large_files(repo, bin_dir, rel):
     assert git(repo, "check-ignore", "-q", rel).returncode == 0
 
 
+@pytest.mark.parametrize("rel", RESEARCH_IGNORED)
+def test_research_ignores_experiments_and_large_files(research_repo, bin_dir, rel):
+    assert run_setup(research_repo, bin_dir).returncode == 0
+    assert git(research_repo, "check-ignore", "-q", rel).returncode == 0
+
+
+@pytest.mark.parametrize("rel", ["experiments/feat-x/log.md", "a.pth", "outputs/x"])
+def test_without_research_experiments_and_large_files_are_not_ignored(repo, bin_dir, rel):
+    run_setup(repo, bin_dir)
+    assert git(repo, "check-ignore", "-q", rel).returncode == 1
+
+
+def test_block_follows_research_answer(research_repo, bin_dir):
+    run_setup(research_repo, bin_dir)
+    answer(research_repo, research=False)
+    run_setup(research_repo, bin_dir)
+    assert git(research_repo, "check-ignore", "-q", "a.pth").returncode == 1
+
+
+@pytest.mark.parametrize("rel", RESEARCH_FILES)
+def test_research_reports_missing_research_file(research_repo, bin_dir, rel):
+    (research_repo / rel).unlink()
+    result = run_setup(research_repo, bin_dir)
+    assert rel in result.stdout and result.returncode == 1
+
+
+def test_options_default_without_answers(tmp_path):
+    assert load_setup().options(tmp_path) == {"research": False, "main_via_pr": True}
+
+
+def test_options_read_answers(tmp_path):
+    answer(tmp_path, research=True, main_via_pr=False)
+    assert load_setup().options(tmp_path) == {"research": True, "main_via_pr": False}
+
+
 @pytest.mark.parametrize("rel", TRACKED)
 def test_keeps_shared_files_tracked(repo, bin_dir, rel):
     run_setup(repo, bin_dir)
@@ -160,8 +214,10 @@ def test_second_run_leaves_gitignore_unchanged(repo, bin_dir):
 
 
 def test_template_gitignore_has_current_block():
+    """템플릿 레포에는 답 파일이 없어 research=false 블록을 쓴다."""
+    setup = load_setup()
     text = (ROOT / ".gitignore").read_text(encoding="utf-8")
-    assert load_setup().gitignore_with_block(text) == text
+    assert setup.gitignore_with_block(text, setup.gitignore_block(research=False)) == text
 
 
 def test_directories_do_not_count_as_hooks(repo, bin_dir):

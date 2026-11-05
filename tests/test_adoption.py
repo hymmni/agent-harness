@@ -25,11 +25,11 @@ def test_conflicting_gitignore_is_reported_and_fix_reaches_new_clone(project, tm
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     template = make_template(tmp_path / "template")
-    assert install(template, project).returncode == 0
+    assert install(template, project, "research=true").returncode == 0
 
     blocked = run_setup(project, bin_dir)
     assert blocked.returncode == 1
-    assert ".claude/settings.json" in blocked.stdout and "docs/ADR.md" in blocked.stdout
+    assert ".claude/settings.json" in blocked.stdout and "docs/RESEARCH.md" in blocked.stdout
 
     gitignore = project / ".gitignore"
     gitignore.write_text(gitignore.read_text().replace(CONFLICTING, ""))
