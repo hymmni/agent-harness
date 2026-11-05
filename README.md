@@ -110,7 +110,9 @@ Docker 스캐폴드를 고르면 `DOCKER.md`, `docker-compose*.yml`, `docker/`, 
 `main`과 `feat|fix|hotfix|refactor|docs|chore/<주제>` 브랜치만 쓰고, 릴리즈는 main의 `vX.Y.Z` 태그와 GitHub Release로 나눕니다. main 반영 방식은 설치 때 고른 `main_via_pr`를 따릅니다. 자세한 규칙은 `AGENTS.md`를 참고하십시오.
 
 - **`main_via_pr: true`**: 에이전트가 PR을 만들고 사람이 웹에서 일반 병합합니다. hook이 main 커밋·병합·push를 막습니다.
-- **`main_via_pr: false`**: 사람이 로컬에서 main에 병합하고 push합니다. 에이전트는 사용자가 승인할 때만 main에 병합하거나 push합니다. 이 승인은 hook이 아니라 규칙으로만 지켜집니다.
+- **`main_via_pr: false`**: 사람이 로컬에서 main에 병합하고 push합니다. hook은 main을 막지 않습니다.
+
+두 방식 모두 에이전트는 main에 커밋·병합·push하지 않습니다. git hook은 사람과 에이전트를 구분하지 못하므로, 에이전트의 명령에만 걸리는 위험 명령 차단 스크립트가 이런 명령을 막습니다. 필요하면 사람이 터미널에서 직접 실행합니다. 차단 스크립트는 현재 브랜치와 명령 문자열로 판단하므로, 스크립트를 거쳐 실행하거나 다른 폴더로 `cd`한 뒤 실행하는 경우는 못 잡습니다.
 
 하네스의 강제는 에이전트 지침과 로컬 hook까지입니다. GitHub 서버의 브랜치 보호는 설정하지 않습니다. public 레포라면 무료 플랜에서도 레포의 Settings → Rules에서 main에 PR 필수 룰셋을 켤 수 있고, 그러면 서버가 직접 막습니다. private 레포는 유료 플랜이 필요합니다.
 
