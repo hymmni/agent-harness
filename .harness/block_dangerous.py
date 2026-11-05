@@ -42,45 +42,88 @@ DANGEROUS = re.compile(
 )
 
 
-# main 보호. 현재 브랜치와 명령 문자열로 판단하므로 스크립트 경유나 `cd 다른곳 && git ...`은 못 잡는다.
-CHANGES_BRANCH = re.compile(rf"{GIT}(commit|merge|cherry-pick|revert|rebase|am)(?![\w-])", re.IGNORECASE)
-TO_MAIN = re.compile(rf"{GIT}(checkout|switch)\s+main(?![\w/.-])")
-PUSH = re.compile(rf"{GIT}push(?![\w-])({SAME})")
+# main 보호. 명령을 셸 구분자로 나눠 순서대로 따라가며 `cd`, `git -C`, 브랜치 전환을 반영한다.
+# 스크립트 경유, 서브셸 안의 cd, 변수로 만든 경로는 못 따라간다.
+SEGMENTS = re.compile(r"&&|\|\||[;&|\n]")
+CHANGES_BRANCH = {"commit", "merge", "cherry-pick", "revert", "rebase", "am"}
+NEW_BRANCH = {"-c", "-C", "-b", "-B", "--create", "--force-create", "--orphan"}
 MAIN_REFS = ("main", "refs/heads/main")
 
 
-def current_branch(cwd: str) -> str | None:
+def git_in(repo: str, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, timeout=10)
+
+
+def current_branch(repo: str) -> str | None:
     """커밋이 없거나 브랜치가 아니면 None. 첫 커밋은 main에서 해야 하므로 막지 않는다."""
-    def git(*args):
-        return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True, timeout=10)
     try:
-        if git("rev-parse", "-q", "--verify", "HEAD").returncode != 0:
+        if git_in(repo, "rev-parse", "-q", "--verify", "HEAD").returncode != 0:
             return None
-        return git("symbolic-ref", "-q", "--short", "HEAD").stdout.strip() or None
+        return git_in(repo, "symbolic-ref", "-q", "--short", "HEAD").stdout.strip() or None
     except (OSError, subprocess.SubprocessError):
         return None
 
 
+def is_local_branch(repo: str, name: str) -> bool:
+    try:
+        return git_in(repo, "rev-parse", "-q", "--verify", f"refs/heads/{name}").returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def words(segment: str) -> list[str]:
+    try:
+        tokens = shlex.split(segment)
+    except ValueError:
+        tokens = segment.split()
+    while tokens and re.match(r"\w+=", tokens[0]):   # `VAR=value git ...`
+        tokens.pop(0)
+    return tokens
+
+
 def changes_main(command: str, cwd: str) -> str | None:
-    pushes = list(PUSH.finditer(command))
-    change = CHANGES_BRANCH.search(command)
-    if not pushes and not change:
+    if "git" not in command:
         return None
-    on_main = TO_MAIN.search(command) is not None or current_branch(cwd) == "main"
-    if on_main and change:
-        return change.group(0)
-    for push in pushes:
-        try:
-            words = shlex.split(push.group(1))
-        except ValueError:
-            words = push.group(1).split()
-        if {"--all", "--mirror"} & set(words):
-            return push.group(0)
-        refs = [word for word in words if not word.startswith("-")][1:]   # 첫 단어는 원격 이름
-        if any(ref.split(":")[-1] in MAIN_REFS for ref in refs):   # +main은 force push 규칙이 막는다
-            return push.group(0)
-        if on_main and (not refs or "HEAD" in refs):
-            return push.group(0)
+    here = cwd
+    branches: dict[str, str | None] = {}   # 이 명령 안에서 레포마다 체크아웃된 브랜치
+
+    def branch(repo):
+        if repo not in branches:
+            branches[repo] = current_branch(repo)
+        return branches[repo]
+
+    for segment in SEGMENTS.split(command):
+        tokens = words(segment)
+        if len(tokens) >= 2 and tokens[0] == "cd":
+            here = os.path.normpath(os.path.join(here, os.path.expanduser(tokens[1])))
+            continue
+        if not tokens or tokens[0] != "git":
+            continue
+        repo, i = here, 1
+        while i < len(tokens) and tokens[i].startswith("-"):   # git -C dir, -c k=v, --no-pager
+            if tokens[i] == "-C" and i + 1 < len(tokens):
+                repo = os.path.normpath(os.path.join(here, os.path.expanduser(tokens[i + 1])))
+            i += 2 if tokens[i] in ("-C", "-c") else 1
+        if i >= len(tokens):
+            continue
+        sub, args, shown = tokens[i], tokens[i + 1:], segment.strip()
+        if sub in ("switch", "checkout"):
+            created = [args[j + 1] for j, arg in enumerate(args[:-1]) if arg in NEW_BRANCH]
+            target = args[0] if args and not args[0].startswith("-") else None
+            if created:
+                branches[repo] = created[0]
+            elif target and (sub == "switch" or is_local_branch(repo, target)):   # checkout은 파일일 수 있다
+                branches[repo] = target
+        elif sub in CHANGES_BRANCH and branch(repo) == "main":
+            return shown
+        elif sub == "push":
+            if {"--all", "--mirror"} & set(args):
+                return shown
+            refs = [arg for arg in args if not arg.startswith("-")][1:]   # 첫 단어는 원격 이름
+            if any(ref.split(":")[-1] in MAIN_REFS for ref in refs):   # +main은 force push 규칙이 막는다
+                return shown
+            if branch(repo) == "main" and (not refs or "HEAD" in refs):
+                return shown
     return None
 
 

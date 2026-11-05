@@ -195,6 +195,37 @@ def test_allows_syncing_and_reading_main(main_repo, command):
     assert run_in(main_repo, command).returncode == 0
 
 
+@pytest.mark.parametrize("command", [
+    "git switch -c feat/y && git commit -m x",
+    "git checkout -b feat/y; git commit -m x",
+    "git switch -c feat/y && git push -u origin HEAD",
+])
+def test_allows_new_branch_created_in_the_same_command(main_repo, command):
+    assert run_in(main_repo, command).returncode == 0
+
+
+def test_checking_out_a_file_does_not_hide_main(main_repo):
+    assert_blocked(run_in(main_repo, "git checkout README.md && git commit -am x"))
+
+
+@pytest.fixture
+def both(tmp_path):
+    """작업 폴더는 main, 다른 레포는 기능 브랜치 — 그 반대도 쓴다."""
+    return make_repo(tmp_path / "on-main"), make_repo(tmp_path / "on-feature", branch="feat/x")
+
+
+def test_git_dash_c_uses_that_repo_branch(both):
+    on_main, on_feature = both
+    assert run_in(on_main, f"git -C {on_feature} commit -m x").returncode == 0
+    assert_blocked(run_in(on_feature, f"git -C {on_main} commit -m x"))
+
+
+def test_cd_uses_that_repo_branch(both):
+    on_main, on_feature = both
+    assert run_in(on_main, f"cd {on_feature} && git push").returncode == 0
+    assert_blocked(run_in(on_feature, f"cd {on_main} && git commit -m x"))
+
+
 def test_first_commit_on_empty_main_is_allowed(tmp_path):
     assert run_in(make_repo(tmp_path / "repo", commit=False), "git commit -m x").returncode == 0
 
