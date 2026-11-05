@@ -56,14 +56,14 @@ def test_second_commit_on_main_is_blocked(repo):
 
 
 @pytest.mark.parametrize("branch", [
-    "feat/ok", "fix/a.b_c", "hotfix/can-timeout", "refactor/x", "docs/x", "chore/x",
+    "feat/ok", "fix/a.b_c", "refactor/x", "docs/x", "chore/x",
 ])
 def test_allowed_branch_names(repo, branch):
     git(repo, "switch", "-q", "-c", branch)
     assert commit(repo).returncode == 0
 
 
-@pytest.mark.parametrize("branch", ["feature/x", "feat/Upper", "exp/x", "wip", "feat/한글"])
+@pytest.mark.parametrize("branch", ["feature/x", "feat/Upper", "exp/x", "wip", "feat/한글", "hotfix/x"])
 def test_blocked_branch_names(repo, branch):
     git(repo, "switch", "-q", "-c", branch)
     result = commit(repo)
@@ -135,6 +135,7 @@ def test_merge_between_feature_branches_is_allowed(repo):
 
 @pytest.mark.parametrize("message", [
     "add thing", "feat(core): add thing", "feat: add thing\n\n- x", "Merge stuff", "Reverted x",
+    "hotfix(core): add thing\n\n- x",
 ])
 def test_bad_commit_message_is_blocked(repo, message):
     git(repo, "switch", "-q", "-c", "feat/x")
@@ -151,10 +152,16 @@ def test_generated_commit_message_is_allowed(repo, message):
     assert commit(repo, message).returncode == 0
 
 
-@pytest.mark.parametrize("kind", ["feat", "fix", "hotfix", "refactor", "docs", "chore", "test", "wip"])
+@pytest.mark.parametrize("kind", ["feat", "fix", "refactor", "docs", "chore", "test", "wip"])
 def test_commit_types_are_allowed(repo, kind):
     git(repo, "switch", "-q", "-c", "feat/x")
     assert commit(repo, f"{kind}(core): add thing\n\n- explain thing").returncode == 0
+
+
+def test_breaking_change_mark_is_allowed(repo):
+    """릴리즈 PR은 `!`가 붙은 커밋을 보고 major 버전을 올린다."""
+    git(repo, "switch", "-q", "-c", "feat/x")
+    assert commit(repo, "feat(config)!: rename the robot key\n\n- explain thing").returncode == 0
 
 
 @pytest.mark.parametrize("message", [

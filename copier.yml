@@ -14,7 +14,11 @@ _exclude:
   - /experiments
   - /scratch
   - /.superpowers
-  - /.github          # 하네스 이슈 양식과 릴리즈 워크플로. 프로젝트용은 각 프로젝트가 만든다.
+  # 하네스 자신의 이슈 양식과 릴리즈 설정. main_via_pr 프로젝트용 릴리즈 설정은
+  # `{% if main_via_pr %}.github{% endif %}` 폴더에서 .github/로 설치한다.
+  - /.github/ISSUE_TEMPLATE
+  - /.github/workflows/release-please.yml
+  - "{% if not main_via_pr %}/.github{% endif %}"   # 빈 .github 폴더도 만들지 않는다
   - /release-please-config.json
   - /.release-please-manifest.json
   - /version.txt
@@ -40,7 +44,7 @@ research:
 main_via_pr:
   type: bool
   default: true
-  help: main 반영을 PR로만 할까요? 아니라고 하면 사람이 로컬에서 main에 병합하고 push합니다.
+  help: main 반영을 PR로만 할까요? 예면 release-please가 릴리즈 PR을 엽니다. 아니면 사람이 로컬에서 main에 병합하고 버전 태그도 직접 답니다.
 
 with_docker:
   type: bool

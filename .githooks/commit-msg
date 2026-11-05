@@ -9,9 +9,9 @@ case $message in
 esac
 
 if ! printf '%s\n' "$message" | sed -n 1p |
-    LC_ALL=C grep -Eq '^(feat|fix|hotfix|refactor|docs|chore|test|wip)\([^)]+\): .+'; then
+    LC_ALL=C grep -Eq '^(feat|fix|refactor|docs|chore|test|wip)\([^)]+\)!?: .+'; then
   echo "BLOCKED: 커밋 제목은 '타입(스코프): 제목' 형식이어야 합니다." >&2
-  echo "  타입: feat, fix, hotfix, refactor, docs, chore, test, wip" >&2
+  echo "  타입: feat, fix, refactor, docs, chore, test, wip" >&2
   exit 1
 fi
 

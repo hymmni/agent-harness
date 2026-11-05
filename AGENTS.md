@@ -27,7 +27,7 @@
 - **기본 워크플로우 — 직접 세션 협업**: 새 설계나 구현 방향은 먼저 사용자와 논의해 확정한 뒤 진행한다. 작업 도중 설계 판단이 필요한 지점(접근 방식 선택, 시도가 실패했을 때의 다음 방향, 결과 해석)마다 먼저 확인받고, 사용자 모르게 재설계하지 않는다. 결과가 기대와 다르게 나오면 "안 됐다"로 뭉개지 말고, 무엇을 어떻게 시도했고 왜 그렇게 판단했는지 구체적으로 보고해 사용자가 직접 검증할 수 있게 한다.
 - **상세 워크플로우**: 설계·플랜·실행 절차는 `harness` 스킬(`.agents/skills/harness/SKILL.md`)을 따른다.
 - **큰 작업 시작 전**: 여러 task짜리 큰 작업을 시작하기 전에 대략적인 토큰 소모 규모(작음/보통/큼)를 사용자에게 알린다. 필요하면 각 에이전트의 공식 수단으로 사용량을 확인해 근거로 제시한다.
-- **Commit Message**: Scoped Conventional Commits 사용. 타입은 `feat|fix|hotfix|refactor|docs|chore|test|wip`만 쓴다. **커밋 메시지(제목·본문)는 영어로 작성**한다. 괄호 안에 수정된 모듈 영역(`policy`, `env`, `data`, `config`, `harness` 등 베이스라인 이름이나 모듈)을 명시하고, **제목은 명사형이 아닌 서술형(동사 중심 문장)으로** 작성하며, **반드시 본문에 글머리기호(`-`)를 사용한 멀티라인 상세 설명을 추가**하라. 예시:
+- **Commit Message**: Scoped Conventional Commits 사용. 타입은 `feat|fix|refactor|docs|chore|test|wip`만 쓴다. 다른 사람이 설정이나 코드를 바꿔야 하는 변경은 `feat(config)!:`처럼 콜론 앞에 `!`를 붙인다. **커밋 메시지(제목·본문)는 영어로 작성**한다. 괄호 안에 수정된 모듈 영역(`policy`, `env`, `data`, `config`, `harness` 등 베이스라인 이름이나 모듈)을 명시하고, **제목은 명사형이 아닌 서술형(동사 중심 문장)으로** 작성하며, **반드시 본문에 글머리기호(`-`)를 사용한 멀티라인 상세 설명을 추가**하라. 예시:
   ```
   feat(policy): add diffusion head to transformer backbone
 
@@ -38,15 +38,16 @@
 - **세션 정리**: 작업 단위(태스크/phase/의미 있는 소결)가 끝날 때마다 컨텍스트가 충분히 쌓였는지 스스로 판단해 컨텍스트 정리나 새 세션 시작을 사용자에게 먼저 권장하라.
 
 ## 🌿 브랜치와 릴리즈
-- 브랜치는 `main`과 `feat|fix|hotfix|refactor|docs|chore/<주제>`만 쓴다. 주제는 소문자, 숫자, `.`, `_`, `-`로 쓴다. main에는 릴리즈 전 코드가 섞일 수 있다.
+- GitHub Flow를 따른다. 브랜치는 `main`과 `feat|fix|refactor|docs|chore/<주제>`만 쓴다. 주제는 소문자, 숫자, `.`, `_`, `-`로 쓴다. main은 언제든 버전 태그를 달 수 있는 상태로 유지한다.
 - 실패한 시도는 `git revert`한다.
+- main에 합치기 전에 브랜치에 main을 병합하고 그 상태로 테스트한다. 테스트한 뒤 main이 바뀌었으면 다시 병합하고 테스트한다. push한 브랜치는 rebase하지 않는다. force push는 `--force-with-lease`도 쓰지 않는다.
 - main 반영 방식은 `.copier-answers.yml`의 `main_via_pr`를 따른다. 파일이나 값이 없으면 `true`로 본다.
   - `true`: main 반영은 PR로만 한다. 에이전트가 PR을 만들고(`gh`가 없으면 링크 안내) 사람이 웹에서 일반 병합(merge commit)한다. 에이전트는 main에 직접 커밋이나 병합을 하지 않고, 공유 레포의 main에 push하지 않는다.
-  - `false`: 사람이 로컬에서 main에 병합하고 push한다. 에이전트는 main에 커밋·병합·push하지 않고, 필요하면 실행할 명령을 사용자에게 알려 사용자가 터미널에서 직접 실행하게 한다.
+  - `false`: 사람이 로컬에서 `git merge --no-ff <브랜치>`로 main에 병합하고 push한다. 에이전트는 main에 커밋·병합·push하지 않고, 필요하면 실행할 명령을 사용자에게 알려 사용자가 터미널에서 직접 실행하게 한다.
   - 두 방식 모두 에이전트가 main에 커밋·병합·push하는 명령은 위험 명령 차단 스크립트가 막는다.
-- push한 브랜치는 rebase하지 않고 main을 병합해 최신화한다. force push는 `--force-with-lease`도 쓰지 않는다.
-- 릴리즈는 main에 `vX.Y.Z` 태그와 GitHub Release로 나눈다. 프로젝트 버전 수정은 태그 전에 main에 반영한다.
-- `hotfix/*`는 배포한 버전만 긴급 수정할 때 쓴다. 해당 태그에서 분기해 수정하고 그 브랜치에 패치 태그를 단 뒤, main 반영 방식대로 main에 합친다. 일반 수정은 `fix/*`를 쓴다.
+- 버전 태그 `vX.Y.Z`는 사람들에게 새 버전으로 올리라고 알릴 때 main에 단다. 버그 수정은 Z, 기능 추가는 Y, 다른 사람이 설정이나 코드를 바꿔야 하는 변경은 X를 올린다. 옛 버전은 따로 고치지 않는다. main에서 고치고 새 버전을 낸다.
+  - `true`: release-please가 릴리즈 PR을 열어 두고 병합될 때마다 갱신한다. 사람이 릴리즈 PR을 병합하면 버전, `CHANGELOG.md`, 태그, GitHub Release가 만들어진다. 태그를 직접 달지 않는다.
+  - `false`: 사람이 프로젝트의 버전 표기(`pyproject.toml` 등)를 고쳐 main에 반영한 뒤 `git tag -a vX.Y.Z -m "<바뀐 점>"`으로 태그를 달고 push한다. GitHub Release는 필요할 때만 만든다.
 - 배포·실행 환경은 `git checkout vX.Y.Z`로 태그만 쓴다.
 - 브랜치와 커밋 규칙은 `.githooks/`가 검사한다. hook을 우회하거나 `core.hooksPath`를 다른 값으로 바꾸지 않는다. 하네스 도입 전에 갈라져 `.githooks/`가 없는 브랜치에서는 main을 병합할 때까지 검사가 동작하지 않는다.
 
