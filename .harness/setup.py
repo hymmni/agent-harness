@@ -6,7 +6,9 @@ clone마다 한 번 실행하는 설정 스크립트. 여러 번 실행해도 �
 2. .gitignore의 하네스 블록을 최신 내용으로 맞춘다. copier는 기존 파일에 덧붙이지 못해 여기서 한다.
 3. 하네스 공유 파일이 팀원에게 전달되는 상태인지 검사한다.
    2와 3은 .copier-answers.yml의 research 답을 따른다.
-4. 설치된 에이전트에 필수 플러그인 superpowers를 사용자 범위로 설치한다.
+4. 설치된 에이전트에 필수 플러그인 superpowers를 설치한다. Claude Code는 이 프로젝트 범위로
+   (.claude/settings.json에 켜져 있지만 내려받기는 clone마다 해야 한다), Codex와 Antigravity는
+   프로젝트 범위를 지원하지 않아 사용자 범위로 설치한다.
 5. 자동화할 수 없는 승인 단계를 안내한다.
 
 끝나지 않은 항목이 있으면 exit 1로 끝난다.
@@ -63,7 +65,7 @@ outputs/
 COMMAND_TIMEOUT = 300
 SUPERPOWERS = {
     "claude": ["claude", "plugin", "install", "superpowers",
-               "--marketplace", "anthropics/claude-plugins-official"],
+               "--marketplace", "anthropics/claude-plugins-official", "--scope", "project"],
     "codex": ["codex", "plugin", "add", "superpowers@openai-curated-remote"],
     "agy": ["agy", "plugin", "install", "https://github.com/obra/superpowers"],
 }
@@ -73,9 +75,9 @@ MANUAL_STEPS = {
 }
 
 
-def run(*command: str) -> subprocess.CompletedProcess:
+def run(*command: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(command, capture_output=True, encoding="utf-8", errors="replace",
-                          stdin=subprocess.DEVNULL, timeout=COMMAND_TIMEOUT)
+                          stdin=subprocess.DEVNULL, timeout=COMMAND_TIMEOUT, cwd=cwd)
 
 
 def connect_git_hooks(root: Path) -> tuple[bool, str]:
@@ -158,13 +160,15 @@ def has_superpowers(agent: str) -> bool:
     return any("superpowers" in line and "not installed" not in line for line in listed)
 
 
-def install_superpowers(agent: str) -> tuple[bool, str]:
+def install_superpowers(agent: str, root: Path) -> tuple[bool, str]:
     command = SUPERPOWERS[agent]
-    manual = f"{agent}: 설치 실패. 직접 실행하세요: {shlex.join(command)}"
+    manual = f"{agent}: 설치 실패. 저장소 루트에서 직접 실행하세요: {shlex.join(command)}"
     try:
-        if has_superpowers(agent):
+        # claude plugin list는 다른 프로젝트의 project 범위 설치도 보여 줘서 확인에 쓸 수 없다.
+        # claude는 이미 설치되어 있으면 install이 그대로 성공한다.
+        if agent != "claude" and has_superpowers(agent):
             return True, f"{agent}: superpowers가 이미 설치되어 있습니다."
-        result = run(*command)
+        result = run(*command, cwd=root)
     except (OSError, subprocess.TimeoutExpired) as e:
         return False, f"{manual}\n  {e}"
     if result.returncode != 0:
@@ -193,7 +197,7 @@ def main() -> int:
 
     agents = [agent for agent in SUPERPOWERS if shutil.which(agent)]
     for agent in agents:
-        done, message = install_superpowers(agent)
+        done, message = install_superpowers(agent, root)
         print(message)
         complete = complete and done
 

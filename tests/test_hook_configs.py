@@ -35,5 +35,16 @@ def test_hook_command_runs_from_the_project(entry, payload):
     assert "rm -rf x" in result.stdout + result.stderr
 
 
+def test_claude_enables_superpowers_for_the_project():
+    """`claude plugin install --scope project`가 쓰는 항목. 내려받기는 setup.py가 clone마다 한다."""
+    assert load(".claude/settings.json")["enabledPlugins"] == {"superpowers@claude-plugins-official": True}
+
+
+def test_claude_settings_use_the_format_claude_writes():
+    """project 범위 설치가 이 파일을 다시 쓴다. 형식이 다르면 clone마다 diff가 생긴다."""
+    text = (ROOT / ".claude/settings.json").read_text(encoding="utf-8")
+    assert text == json.dumps(json.loads(text), indent=2, ensure_ascii=False) + "\n"
+
+
 def test_references_are_write_protected():
     assert "Edit(/references/**)" in load(".claude/settings.json")["permissions"]["deny"]
