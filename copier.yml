@@ -14,7 +14,11 @@ _exclude:
   - /experiments
   - /scratch
   - /.superpowers
-  - /.github          # 하네스 이슈 양식. 프로젝트용 양식은 각 프로젝트가 만든다.
+  - /.github          # 하네스 이슈 양식과 릴리즈 워크플로. 프로젝트용은 각 프로젝트가 만든다.
+  - /release-please-config.json
+  - /.release-please-manifest.json
+  - /version.txt
+  - /CHANGELOG.md
   - .git
   - __pycache__
   - "*.py[co]"
