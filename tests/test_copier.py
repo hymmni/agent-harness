@@ -144,11 +144,11 @@ def test_update_merges_template_change_with_local_edit(tmp_path, project):
     git(project, "commit", "-qam", "local")
 
     upstream = template / "AGENTS.md"
-    text = upstream.read_text(encoding="utf-8")
-    upstream.write_text(text.replace("# Harness Framework", "# Harness Framework v2", 1), encoding="utf-8")
+    title, rest = upstream.read_text(encoding="utf-8").split("\n", 1)
+    upstream.write_text(f"{title} v2\n{rest}", encoding="utf-8")
     git(template, "commit", "-qam", "v2")
 
     result = copier("update", cwd=project)
     assert result.returncode == 0, result.stderr
     merged = agents.read_text(encoding="utf-8")
-    assert merged.startswith("# Harness Framework v2") and merged.endswith("- local rule\n")
+    assert merged.startswith(f"{title} v2\n") and merged.endswith("- local rule\n")

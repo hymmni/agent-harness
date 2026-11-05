@@ -1,4 +1,4 @@
-# Harness Framework: Robot Behavior Intelligence
+# Agent Harness
 
 이 저장소는 코딩 에이전트와 함께 작업하는 프로젝트에 설치하는 **하네스 템플릿**입니다. 프로젝트 레포에 적용하면 Claude Code, Codex, Antigravity 중 어떤 에이전트를 쓰든 같은 규칙과 스킬, 안전장치로 구조화된 워크플로우(탐색 → 논의 → 플랜 작성 → 실행)를 따를 수 있습니다. 로봇 연구용 규칙(실험 기록, 하드웨어 문서, 대용량 파일 제외)은 설치할 때 고릅니다.
 
@@ -13,7 +13,7 @@
 **적용할 프로젝트 레포 루트에서** 실행합니다. 빈 프로젝트는 먼저 `mkdir <이름> && cd <이름> && git init -b main`을 실행합니다. 기존 프로젝트는 먼저 `chore/add-harness` 같은 브랜치를 만들고, 설치 결과를 그 브랜치에 커밋한 뒤 평소 방식대로 main에 합칩니다.
 
 ```bash
-copier copy gh:hymmni/claude-harness-framework .
+copier copy gh:hymmni/agent-harness .
 python3 .harness/setup.py
 ```
 
