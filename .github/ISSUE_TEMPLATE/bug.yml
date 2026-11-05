@@ -1,0 +1,40 @@
+name: 하네스 버그
+description: hook, 차단 스크립트, setup.py, 규칙 문서, copier 설치가 기대와 다르게 동작할 때
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 이 레포는 public입니다. 프로젝트 이름, 코드, 파일 경로, 서버나 PC 정보는 적지 마세요. 하네스의 동작만 적어 주세요.
+  - type: textarea
+    id: problem
+    attributes:
+      label: 무엇이 문제인가요
+      description: 실행한 명령과 실제로 일어난 일, 출력된 메시지
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 하네스만 설치한 빈 레포에서 따라 할 수 있는 순서
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 동작
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 하네스 버전
+      description: 프로젝트의 .copier-answers.yml에 있는 _commit 값
+  - type: dropdown
+    id: agent
+    attributes:
+      label: 에이전트
+      options:
+        - Claude Code
+        - Codex
+        - Antigravity
+        - 에이전트 없이 사람이 실행
+        - 기타
