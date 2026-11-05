@@ -1,4 +1,4 @@
-# Robot Research Harness
+# Agent Harness
 
 ## 🚀 세션 시작 체크리스트
 새 세션을 시작할 때 반드시 수행하라:

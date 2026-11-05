@@ -1,4 +1,4 @@
-# Robot Research Harness
+# Agent Harness
 
 이 저장소는 로봇 행동 지능(Diffusion Policy, Flow Matching 등) 연구를 위한 **드롭인(drop-in) 코드 하네스 템플릿**입니다. 작업할 베이스라인 레포지토리에 적용하면 Claude Code, Codex, Antigravity 중 어떤 에이전트를 쓰든 같은 규칙과 스킬, 안전장치로 구조화된 워크플로우(탐색 → 논의 → 플랜 작성 → 실행)를 따를 수 있습니다.
 
@@ -13,7 +13,7 @@
 **적용할 프로젝트 레포 루트에서** 실행합니다. 빈 프로젝트는 먼저 `mkdir <이름> && cd <이름> && git init -b main`을 실행합니다. 기존 프로젝트는 먼저 `chore/add-harness` 같은 브랜치를 만듭니다. 설치 결과는 그 브랜치에 커밋해 PR로 올립니다.
 
 ```bash
-copier copy gh:hymmni/robot-research-harness .
+copier copy gh:hymmni/agent-harness .
 python3 .harness/setup.py
 ```
 
