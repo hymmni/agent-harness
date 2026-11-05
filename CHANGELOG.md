@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 (2026-11-05)
+
+## What's Changed
+* fix(harness): ignore the superpowers workspace folder by @hymmni in https://github.com/hymmni/agent-harness/pull/21
+
+
+**Full Changelog**: https://github.com/hymmni/agent-harness/compare/v0.2.2...v0.2.3
+
 ## 0.2.2 (2026-11-05)
 
 ## What's Changed
