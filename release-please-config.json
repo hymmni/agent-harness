@@ -5,15 +5,43 @@
   "packages": {
     ".": {
       "changelog-sections": [
-        {"type": "feat", "section": "기능"},
-        {"type": "fix", "section": "버그 수정"},
-        {"type": "hotfix", "section": "버그 수정"},
-        {"type": "docs", "section": "규칙과 문서"},
-        {"type": "refactor", "section": "구조 정리"},
-        {"type": "chore", "section": "기타", "hidden": true},
-        {"type": "test", "section": "테스트", "hidden": true},
-        {"type": "wip", "section": "작업 중", "hidden": true}
+        {
+          "type": "feat",
+          "section": "기능"
+        },
+        {
+          "type": "fix",
+          "section": "버그 수정"
+        },
+        {
+          "type": "hotfix",
+          "section": "버그 수정"
+        },
+        {
+          "type": "docs",
+          "section": "규칙과 문서"
+        },
+        {
+          "type": "refactor",
+          "section": "구조 정리"
+        },
+        {
+          "type": "chore",
+          "section": "기타",
+          "hidden": true
+        },
+        {
+          "type": "test",
+          "section": "테스트",
+          "hidden": true
+        },
+        {
+          "type": "wip",
+          "section": "작업 중",
+          "hidden": true
+        }
       ]
     }
-  }
+  },
+  "changelog-type": "github"
 }
