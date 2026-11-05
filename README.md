@@ -130,6 +130,8 @@ hook 파일은 브랜치마다 따라다니므로, 도입 전에 갈라진 브�
 
 하네스의 버그나 개선 제안은 이 레포의 [Issues](https://github.com/hymmni/agent-harness/issues/new/choose)에 양식으로 올립니다. 이 레포는 public이므로 프로젝트 이름, 코드, 파일 경로, 인프라 정보는 적지 않습니다. 설치된 프로젝트의 에이전트도 `AGENTS.md`의 규칙에 따라, 사용자가 동의하면 같은 방식으로 이슈를 올립니다.
 
+설치된 프로젝트에서는 하네스 파일을 직접 고치지 않습니다. 프로젝트에서 고친 내용은 `copier update` 뒤에도 남아 템플릿의 수정과 겹치기 때문입니다. 버그를 만나면 hook이나 차단 스크립트를 끄지 않는 방법으로 피해 가고(막힌 명령은 사람이 터미널에서 실행), 이슈를 올린 뒤 고친 버전을 `copier update`로 받습니다.
+
 ## 템플릿 개발
 
 레포 루트가 copier 템플릿입니다. `copier.yml`의 `_exclude`에 있는 README, `tests/`, `docs/superpowers/`, `.github/` 같은 템플릿 개발용 파일은 프로젝트로 복사되지 않습니다. 루트에 새 파일을 추가하면 `tests/test_copier.py`가 실패하니, 복사할지 `_exclude`에 넣을지 정합니다. 이름에 `{% if with_docker %}`나 `{% if research %}`가 붙은 파일과 폴더는 그 질문에 "예"라고 답했을 때만 만들어집니다. 템플릿 레포 자신에는 `.copier-answers.yml`이 없어 `research=false`, `main_via_pr=true`로 동작합니다.

@@ -43,6 +43,7 @@ def test_shared_file_names_no_agent(rel):
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
     "main_via_pr", "docs/RESEARCH.md", "_src_path", "gh issue create -R", "--label bug",
+    "하네스 파일을 직접 고치지 않는다", "터미널에서 직접 실행", "멈추고 사용자의 결정을 따른다",
 ])
 def test_agents_md_states_rule(text):
     assert text in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
@@ -66,6 +67,11 @@ def test_issue_form_warns_that_the_repo_is_public(path):
 @pytest.mark.parametrize("text", ["experiments/", "LOG_TEMPLATE", "ENVIRONMENT.md", "personal"])
 def test_agents_md_leaves_research_rules_to_research_doc(text):
     assert text not in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+
+def test_agents_md_does_not_allow_patching_the_harness_in_a_project():
+    """프로젝트에서 고친 하네스 파일은 copier update 뒤에도 남아 템플릿 수정과 겹친다."""
+    assert "먼저 고치고" not in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("text", [
