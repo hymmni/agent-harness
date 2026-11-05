@@ -26,6 +26,17 @@ _skip_if_exists:
   - docs/private/ENVIRONMENT.md
   - requirements.txt
 
+research:
+  type: bool
+  default: false
+  help: 연구용 규칙(실험 기록, 하드웨어 문서, 대용량 파일 제외)도 설치할까요? (docs/RESEARCH.md)
+
+# hook과 setup.py는 이 답을 .copier-answers.yml에서 `main_via_pr: false` 같은 줄로 읽는다.
+main_via_pr:
+  type: bool
+  default: true
+  help: main 반영을 PR로만 할까요? 아니라고 하면 사람이 로컬에서 main에 병합하고 push합니다.
+
 with_docker:
   type: bool
   default: false

@@ -34,7 +34,7 @@
 
 ### 파일 나누기
 - 공통: `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `.codex/`, `.githooks/`, `.harness/block_dangerous.py`, `.harness/setup.py`, `docs/ADR.md`, `docs/ARCHITECTURE.md`, `docs/README.md`
-- research만: `docs/RESEARCH.md`(새 파일), `.harness/LOG_TEMPLATE.md`, `docs/private/ENVIRONMENT.md`. 경로 이름에 `{% if research %}`를 붙인다(Docker와 같은 방식).
+- research만: `docs/RESEARCH.md`(새 파일), `.harness/LOG_TEMPLATE.md`, `docs/private/ENVIRONMENT.md`. 경로 이름에 `{% if research %}`를 붙인다(Docker와 같은 방식). `docs/private/`는 폴더 이름에 붙인다.
 - `docs/ROBOT_GUIDE.md`는 `docs/RESEARCH.md`로 합치고 지운다.
 - `docs/ARCHITECTURE.md`, `docs/ADR.md`는 로봇 예시를 빼고 범용 자리표시 문서로 바꾼다. 한 벌만 둔다.
 
@@ -72,7 +72,7 @@
 - README: 세 질문 설명, 두 main 반영 방식, public 레포의 웹 브랜치 보호 안내, 적용 후 구성에서 research 전용 파일 표시.
 
 ## 미리 확인한 것 (copier 9.19.1, 일회용 템플릿)
-- 폴더 안 파일 이름의 `{% if research %}`가 동작한다. 거짓이면 파일도, 빈 폴더도 생기지 않는다.
+- 폴더 안 파일 이름의 `{% if research %}`가 동작한다. 다만 파일에만 조건을 걸면 빈 폴더가 남는다(구현 중 테스트로 확인). 그래서 `docs/private/`는 폴더 이름에 조건을 건다.
 - 답 파일에 `main_via_pr: true`, `research: false`처럼 한 줄씩 기록된다.
 - `copier update --defaults --data research=true`로 연구 파일이 추가되고, `research=false`로 다시 지워진다.
 - research를 끄면 `docs/private/ENVIRONMENT.md`도 지워질 수 있다. 연구를 그만두는 경우라 받아들인다. README에 적는다.

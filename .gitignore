@@ -1,26 +1,18 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+# 템플릿 개발 기록. 템플릿 레포는 research 옵션이 아니어서 블록에 들어 있지 않다.
+/experiments/
 
-# 아래 블록은 .harness/setup.py가 관리한다. 이 템플릿 레포도 설치된 프로젝트와 같은 규칙을 쓴다.
-# 블록 안을 바꾸려면 setup.py의 GITIGNORE_BLOCK을 고친다.
+# 아래 블록은 .harness/setup.py가 관리한다. 템플릿 레포에는 답 파일이 없어 research=false 블록을 쓴다.
+# 블록 안을 바꾸려면 setup.py의 COMMON_IGNORES, RESEARCH_IGNORES를 고친다.
 # >>> harness gitignore (managed) >>>
 /.claude/*
 !/.claude/skills/
 !/.claude/settings.json
 /docs/private/
-/experiments/
 /references/
 /scratch/
 /continuation_plan.md
 .env
-*.pth
-*.pt
-*.ckpt
-*.safetensors
-*.zarr
-*.hdf5
-*.h5
-wandb/
-outputs/
 # <<< harness gitignore (managed) <<<

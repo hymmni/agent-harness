@@ -23,6 +23,7 @@ DOCKER_TOP = {
     "docker", ".devcontainer",
 }
 HOOK_NAMES = ("pre-commit", "pre-merge-commit", "commit-msg", "pre-push")
+RESEARCH_FILES = ("docs/RESEARCH.md", ".harness/LOG_TEMPLATE.md", "docs/private/ENVIRONMENT.md")
 
 
 def git(repo, *args):
@@ -40,7 +41,8 @@ def make_template(path):
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
     git(path, "init", "-q", "-b", "main")
-    git(path, "add", "-A")
+    # 이 레포에서 추적하지만 .gitignore에 걸리는 파일(docs/private/ 아래)도 커밋해야 한다.
+    git(path, "add", "-A", "-f")
     git(path, "commit", "-qm", "template")
     return path
 
@@ -81,6 +83,32 @@ def test_installs_only_harness_files(template, project):
 def test_excludes_only_root_readme(template, project):
     install(template, project)
     assert (project / "docs/README.md").is_file()
+
+
+def test_research_files_need_research(template, project):
+    install(template, project)
+    assert [rel for rel in RESEARCH_FILES if (project / rel).exists()] == []
+    assert not (project / "docs/private").exists()
+
+
+def test_research_installs_research_files(template, project):
+    assert install(template, project, "research=true").returncode == 0
+    assert [rel for rel in RESEARCH_FILES if not (project / rel).is_file()] == []
+
+
+def test_answers_are_one_line_each_for_hooks(template, project):
+    install(template, project)
+    lines = (project / ".copier-answers.yml").read_text(encoding="utf-8").splitlines()
+    assert "research: false" in lines and "main_via_pr: true" in lines
+
+
+def test_update_can_turn_research_on(tmp_path, project):
+    install(make_template(tmp_path / "template"), project)
+    git(project, "add", "-A")
+    git(project, "commit", "-qm", "adopt")
+    result = copier("update", "--data", "research=true", cwd=project)
+    assert result.returncode == 0, result.stderr
+    assert (project / "docs/RESEARCH.md").is_file()
 
 
 @pytest.mark.parametrize("name", HOOK_NAMES)

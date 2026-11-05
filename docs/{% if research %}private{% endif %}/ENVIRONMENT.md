@@ -1,6 +1,6 @@
 # Environment (로컬 전용 — git 미추적)
 
-이 문서는 PC/GPU 등 실제 하드웨어 구성을 기록한다. `docs/ARCHITECTURE.md`가 public일 수 있어 인프라 정보를 분리했다. 하네스를 새 프로젝트에 처음 적용할 때(`docs/ROBOT_GUIDE.md` 1절) 한 번 채워 넣으면, 이후 세션은 이 문서만 참고하고 다시 채우지 않는다.
+이 문서는 PC/GPU 등 실제 하드웨어 구성을 기록한다. `docs/ARCHITECTURE.md`가 public일 수 있어 인프라 정보를 분리했다. clone마다 한 번 채워 넣으면(`docs/RESEARCH.md`의 "시작하기"), 이후 세션은 이 문서만 참고하고 다시 채우지 않는다.
 
 (예시 — 로봇 연구 환경에서 자주 나타나는 3-PC 패턴. 실제 구성으로 교체할 것)
 1. **코딩용 PC (Local)**: GPU 없음. 코드 작성, 리팩토링, Git 관리 수행.

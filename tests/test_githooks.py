@@ -91,6 +91,41 @@ def test_local_merge_into_main_is_blocked(repo):
     assert result.returncode != 0 and "main" in result.stderr
 
 
+@pytest.fixture
+def direct_repo(repo):
+    """main_via_pr=false로 설치해 사람이 로컬에서 main에 병합하는 프로젝트."""
+    (repo / ".copier-answers.yml").write_text("research: false\nmain_via_pr: false\n")
+    return repo
+
+
+def test_direct_mode_allows_commit_on_main(direct_repo):
+    assert commit(direct_repo).returncode == 0
+
+
+def test_direct_mode_allows_local_merge_into_main(direct_repo):
+    git(direct_repo, "switch", "-q", "-c", "feat/x")
+    commit(direct_repo)
+    git(direct_repo, "switch", "-q", "main")
+    assert git(direct_repo, "merge", "--no-ff", "--no-edit", "feat/x").returncode == 0
+
+
+def test_direct_mode_allows_push_to_main(direct_repo, remote):
+    git(direct_repo, "push", "-q", "origin", "main")
+    assert commit(direct_repo).returncode == 0
+    assert git(direct_repo, "push", "-q", "origin", "main").returncode == 0
+
+
+def test_direct_mode_still_blocks_conflict_markers(direct_repo):
+    (direct_repo / "c.txt").write_text("<<<<<<< before updating\nx\n")
+    git(direct_repo, "add", "c.txt")
+    assert git(direct_repo, "commit", "-q", "-m", GOOD).returncode != 0
+
+
+def test_pr_mode_answer_blocks_commit_on_main(repo):
+    (repo / ".copier-answers.yml").write_text("research: false\nmain_via_pr: true\n")
+    assert commit(repo).returncode != 0
+
+
 def test_merge_between_feature_branches_is_allowed(repo):
     git(repo, "switch", "-q", "-c", "feat/y")
     commit(repo)
