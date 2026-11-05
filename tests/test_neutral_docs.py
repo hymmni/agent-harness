@@ -39,7 +39,7 @@ def test_shared_file_names_no_agent(rel):
 
 
 @pytest.mark.parametrize("text", [
-    "feat|fix|refactor|docs|chore", "scratch/", "git merge --no-ff", "git tag -a", "release-please",
+    "feat|fix|refactor|docs|chore", "scratch/", "git merge --no-ff", "git tag -a", "release-please", "1.0.0 전에는",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
     "main_via_pr", "docs/RESEARCH.md", "_src_path", "gh issue create -R", "--label bug",

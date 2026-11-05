@@ -116,7 +116,7 @@ GitHub Flow를 따릅니다. `main`과 `feat|fix|refactor|docs|chore/<주제>` �
 
 - 레포 관리자가 Settings → Actions → General에서 "Allow GitHub Actions to create and approve pull requests"를 켜야 릴리즈 PR이 열립니다. 조직 레포는 조직 설정에서 먼저 허용해야 할 수 있습니다.
 - 첫 릴리즈는 `0.1.0`입니다. 이미 버전을 쓰던 레포라면 `.github/.release-please-manifest.json`의 `"0.0.0"`을 현재 버전으로 바꿉니다.
-- 버전은 커밋 타입으로 정합니다. 제목에 `!`가 있으면 major, `feat`가 있으면 minor, 그 밖에는 patch를 올립니다. 릴리즈 노트는 병합된 PR 목록이라 `chore`만 병합돼도 릴리즈 PR이 열릴 수 있습니다. 내보낼지는 릴리즈 PR을 병합할지로 정합니다.
+- 버전은 커밋 타입으로 정합니다. 제목에 `!`가 있으면 major, `feat`가 있으면 minor, 그 밖에는 patch를 올립니다. 1.0.0 전에는 `!`도 minor만 올립니다. 1.0.0으로 올릴 때는 커밋 본문에 `Release-As: 1.0.0` 줄을 넣습니다. 릴리즈 노트는 병합된 PR 목록이라 `chore`만 병합돼도 릴리즈 PR이 열릴 수 있습니다. 내보낼지는 릴리즈 PR을 병합할지로 정합니다.
 - Python 프로젝트는 `.github/release-please-config.json`의 `"release-type"`을 `"python"`으로 바꾸면 `pyproject.toml`의 버전도 함께 올립니다. 이 수정은 `copier update` 뒤에도 남습니다.
 
 두 방식 모두 에이전트는 main에 커밋·병합·push하지 않습니다. git hook은 사람과 에이전트를 구분하지 못하므로, 에이전트의 명령에만 걸리는 위험 명령 차단 스크립트가 이런 명령을 막습니다. 필요하면 사람이 터미널에서 직접 실행합니다. 차단 스크립트는 명령 문자열을 순서대로 따라가며 `cd`, `git -C`, 브랜치 전환을 반영해 대상 레포의 브랜치를 판단합니다. 스크립트를 거쳐 실행하거나, 서브셸 안에서 `cd`하거나, 변수로 만든 경로는 못 따라갑니다.

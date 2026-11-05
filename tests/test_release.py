@@ -32,3 +32,8 @@ def test_project_workflow_matches_the_template_but_reads_its_github_folder():
     for name in ("release-please-config.json", ".release-please-manifest.json"):
         own = own.replace(f": {name}\n", f": .github/{name}\n")
     assert (PROJECT / "workflows/release.yml").read_text(encoding="utf-8") == own
+
+
+def test_breaking_changes_bump_minor_before_1_0():
+    """0.x에서는 `!` 커밋이 1.0.0으로 뛰지 않는다. 1.0.0은 `Release-As: 1.0.0`으로 정한다."""
+    assert read_json(ROOT / "release-please-config.json")["bump-minor-pre-major"] is True
