@@ -5,7 +5,7 @@
 1. `README.md`를 읽고 프로젝트 구조를 파악한다.
 2. 가상환경이 있는지 확인한다(`venv/`, `.venv/`, `conda` 환경 등). 있으면 해당 환경에서 작업한다.
    - conda: `conda activate <env>` / venv: `source venv/bin/activate`
-3. `docs/ARCHITECTURE.md`, `docs/ADR.md`를 읽고 현재 구조와 결정 이력을 파악한다.
+3. `docs/ARCHITECTURE.md`, `docs/ADR.md`를 읽고 현재 구조와 결정 이력을 파악한다. 문서에 "자리표시"가 남아 있으면 아직 채우지 않은 것이다. 사용자에게 알리고, 동의를 받으면 코드를 읽어 실제 내용으로 채운다.
 4. `docs/RESEARCH.md`가 있으면 읽고 그 규칙도 따른다. 하네스를 `research` 옵션으로 설치한 경우에만 있다.
 5. `git config core.hooksPath`가 `.githooks`가 아니면 사용자에게 알리고 동의를 받아 `python3 .harness/setup.py`를 실행한다.
 6. 현재 브랜치의 플랜(`docs/superpowers/plans/`)이 있으면 체크되지 않은 task부터 이어 간다.

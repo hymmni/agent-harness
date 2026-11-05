@@ -169,3 +169,11 @@ def test_update_merges_template_change_with_local_edit(tmp_path, project):
     assert result.returncode == 0, result.stderr
     merged = agents.read_text(encoding="utf-8")
     assert merged.startswith(f"{title} v2\n") and merged.endswith("- local rule\n")
+
+
+def test_readme_removal_lists_every_installed_path(template, project):
+    """하네스 제거 절차가 설치되는 최상위 경로를 빠뜨리지 않는다."""
+    install(template, project, "research=true", "with_docker=true", "main_via_pr=true")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    section = readme.split("### 하네스 제거", 1)[1].split("\n## ", 1)[0]
+    assert [name for name in sorted(top_names(project)) if f"`{name}" not in section] == []

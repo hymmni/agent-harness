@@ -26,7 +26,7 @@ python3 .harness/setup.py
   | `with_docker` | 아니오 | Docker 개발 환경 스캐폴드를 설치합니다. |
 
 - 이미 있는 파일과 겹치면 copier가 덮어쓸지 묻습니다. 덮어쓰지 않은 파일(예: 기존 `AGENTS.md`)에는 하네스 내용을 직접 병합합니다. 이 질문에 답할 터미널이 없으면 copier가 중간에 멈춰 일부 파일만 복사되므로, 터미널에서 직접 실행합니다.
-- `docs/ADR.md`, `docs/ARCHITECTURE.md`, `docs/private/ENVIRONMENT.md`는 프로젝트가 채워 쓰는 문서라 처음 한 번만 만들고 갱신하지 않습니다.
+- `docs/ADR.md`, `docs/ARCHITECTURE.md`, `docs/private/ENVIRONMENT.md`는 프로젝트가 채워 쓰는 문서라 처음 한 번만 만들고 갱신하지 않습니다. 설치한 뒤 에이전트에게 두 `docs/` 문서를 채워 달라고 합니다. 문서에 "자리표시"가 남아 있으면 에이전트도 세션을 시작할 때 먼저 채우자고 제안합니다.
 - `.copier-answers.yml`은 갱신에 필요하므로 함께 커밋하고, 직접 수정하지 않습니다.
 - `install.py`로 설치했던 프로젝트도 같은 명령으로 다시 적용합니다. 겹치는 파일은 덮어쓰고 차이를 검토합니다.
 
@@ -74,6 +74,19 @@ python3 .harness/setup.py
 - `agy -p`는 비대화형이라 셸 명령을 승인할 수 없습니다. 브랜치와 커밋 작업은 대화형 세션에서 합니다.
 
 `research`로 설치했다면 `docs/private/ENVIRONMENT.md`는 git으로 전달되지 않으므로 clone마다 채웁니다.
+
+### 하네스 제거
+
+제거 명령은 없으니 브랜치에서 직접 지웁니다. 프로젝트가 채운 `docs/ARCHITECTURE.md`, `docs/ADR.md`나 직접 고쳐 쓰는 `requirements.txt`는 남겨도 됩니다.
+
+1. 하네스가 설치한 경로를 지웁니다. 설치 때 고른 답에 따라 일부만 있습니다.
+   - 공통: `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `.codex/`, `.githooks/`, `.harness/`, `.copier-answers.yml`, `docs/`의 `README.md`·`ARCHITECTURE.md`·`ADR.md`
+   - `research`: `docs/RESEARCH.md`, `docs/private/ENVIRONMENT.md`
+   - `main_via_pr`: `.github/workflows/release.yml`, `.github/release-please-config.json`, `.github/.release-please-manifest.json`
+   - `with_docker`: `DOCKER.md`, `docker-compose.yml`, `docker-compose.gpu.yml`, `docker/`, `.devcontainer/`, `.env.example`, `requirements.txt`
+2. `.gitignore`에서 `# >>> harness gitignore (managed) >>>`부터 `# <<< harness gitignore (managed) <<<`까지 지웁니다.
+3. clone마다 `git config --unset core.hooksPath`로 git hook 연결을 풉니다. 에이전트에게는 이 명령이 차단되므로 사람이 실행합니다.
+4. Claude Code의 `superpowers`는 `claude plugin uninstall superpowers --scope project`로 지웁니다. Codex와 Antigravity에는 사용자 범위로 설치되어 다른 프로젝트도 쓰므로 그대로 둡니다.
 
 ### 적용 후 구성
 
