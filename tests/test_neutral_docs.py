@@ -42,7 +42,7 @@ def test_shared_file_names_no_agent(rel):
     "feat|fix|refactor|docs|chore", "scratch/", "git merge --no-ff", "git tag -a", "release-please", "1.0.0 전에는", "자리표시",
     "git checkout vX.Y.Z", "docker compose exec dev", "core.hooksPath",
     "pyproject.toml", ".harness/setup.py", "git revert", "rebase", "copier update --defaults",
-    "main_via_pr", "docs/RESEARCH.md", "`docs/private/`에 쓴다", "_src_path", "gh issue create -R", "--label bug",
+    "main_via_pr", "docs/RESEARCH.md", "`docs/private/`에 쓴다", "사용자가 제안할 때만 쓴다", "_src_path", "gh issue create -R", "--label bug",
     "하네스 파일을 직접 고치지 않는다", "터미널에서 직접 실행", "멈추고 사용자의 결정을 따른다",
 ])
 def test_agents_md_states_rule(text):
