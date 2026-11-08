@@ -142,6 +142,19 @@ hook 파일은 브랜치마다 따라다니므로, 도입 전에 갈라진 브�
 
 `references/` 쓰기 차단은 Claude Code에서만 강제되고, 다른 에이전트는 `AGENTS.md`의 규칙에 의존합니다.
 
+### 여러 기능을 동시에 작업하기 (선택)
+
+기능을 동시에 개발하려면 브랜치마다 `git worktree`로 폴더를 따로 만들 수 있습니다. 한 번에 하나만 작업한다면 필요 없습니다.
+
+    git worktree add ../<레포>-<주제> -b feat/<주제>
+
+- git hook은 worktree에서도 동작합니다. `.githooks/`가 추적되는 파일이라 새 폴더에도 있고, 브랜치 이름과 커밋 메시지 검사가 그대로 걸립니다. 단 하네스 도입 전에 갈라진 브랜치는 `.githooks/`가 없어 검사가 없습니다.
+- 폴더는 레포 밖에 두면 `.gitignore`를 건드릴 필요가 없습니다.
+- git이 추적하지 않는 파일(`references/`, `docs/private/`, 데이터 링크, `.env`)은 새 폴더에 없습니다. 필요한 것은 폴더마다 링크하거나 복사합니다.
+- `pip install -e`는 한 폴더만 가리킵니다. worktree에서 테스트하면 원래 폴더의 코드를 import할 수 있으니, worktree마다 가상환경을 만들어 설치하거나 `python -c "import 패키지; print(패키지.__file__)"`로 경로를 확인합니다.
+- 같은 브랜치는 두 폴더에서 동시에 체크아웃할 수 없습니다. main도 마찬가지이므로 `main_via_pr: false`에서 병합할 폴더(원래 폴더)는 main으로 비워 둡니다.
+- 다 쓴 폴더는 `git worktree remove <폴더>`로 지웁니다.
+
 ## 시작하기
 
 에이전트 협업 워크플로우는 `harness` 스킬(`.agents/skills/harness/SKILL.md`)에, 연구용 사용법은 `research`로 설치한 프로젝트의 `docs/RESEARCH.md`에 있습니다.
