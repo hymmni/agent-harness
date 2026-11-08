@@ -149,6 +149,7 @@ hook 파일은 브랜치마다 따라다니므로, 도입 전에 갈라진 브�
     git worktree add ../<레포>-<주제> -b feat/<주제>
 
 - git hook과 위험 명령 차단 스크립트는 worktree에서도 동작합니다. `.githooks/`가 추적되는 파일이라 새 폴더에도 있고, 브랜치 이름과 커밋 메시지 검사가 그대로 걸립니다. 단 하네스 도입 전에 갈라진 브랜치는 `.githooks/`가 없어 검사가 없습니다.
+- Claude Code의 `references/` 수정 차단(Edit 도구)도 worktree에서 동작합니다. worktree 안의 링크 경로와 원래 폴더의 절대 경로 모두 거부되는 것을 확인했습니다. Bash로 파일에 쓰는 명령은 이 규칙의 대상이 아닙니다.
 - 폴더는 레포 밖에 두면 `.gitignore`를 건드릴 필요가 없습니다.
 - git이 추적하지 않는 파일(`references/`, `docs/private/`, 데이터 링크, `.env`)은 새 폴더에 없습니다. 필요한 것은 폴더마다 링크하거나 복사합니다.
 - `pip install -e`는 한 폴더만 가리킵니다. worktree에서 테스트하면 원래 폴더의 코드를 import할 수 있으니, worktree마다 가상환경을 만들어 설치하거나 `python -c "import 패키지; print(패키지.__file__)"`로 경로를 확인합니다.
