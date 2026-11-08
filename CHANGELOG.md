@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.4 (2026-11-08)
+
+## What's Changed
+* docs(harness): let the human decide closing issues at merge time by @hymmni in https://github.com/hymmni/agent-harness/pull/24
+* docs(harness): add an optional git worktree guide to the README by @hymmni in https://github.com/hymmni/agent-harness/pull/25
+
+
+**Full Changelog**: https://github.com/hymmni/agent-harness/compare/v0.2.3...v0.2.4
+
 ## 0.2.3 (2026-11-05)
 
 ## What's Changed
